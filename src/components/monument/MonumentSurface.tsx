@@ -11,8 +11,8 @@ interface Props {
 /**
  * The Monument at rest: the artist's work, matted on a dark wall, bearing
  * quiet marks. Pan/pinch/momentum via usePanZoom; taps surface normalized
- * 0–1 coordinates against the image. (Adapted from the validated
- * prymr-frontend-s0 BoardFrame.)
+ * 0–1 coordinates against the image. Deprecated scaffolding: replace with the
+ * Living Frame card model before creator testing.
  */
 export function MonumentSurface({ imageUrl, onTap, overlay }: Props) {
   const { containerRef, imageRef, state, handlers } = usePanZoom({ onTap })

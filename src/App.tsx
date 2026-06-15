@@ -4,16 +4,12 @@ import { MonumentPage } from './pages/MonumentPage'
 import { MomentFlowPage } from './pages/MomentFlowPage'
 import { AuthVerifyPage } from './pages/AuthVerifyPage'
 import { DashboardPage } from './pages/DashboardPage'
-import { MonumentPrototypePage } from './prototype/MonumentPrototypePage'
-import { CardStackPrototypePage } from './prototype/cards/CardStackPrototypePage'
 import { FramePrototypePage } from './prototype/frame/FramePrototypePage'
 
 export function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/prototype/monument" element={<MonumentPrototypePage />} />
-        <Route path="/prototype/cards" element={<CardStackPrototypePage />} />
         <Route path="/prototype/frame" element={<FramePrototypePage />} />
         <Route path="/auth/verify" element={<AuthVerifyPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
