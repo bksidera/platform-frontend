@@ -32,8 +32,8 @@ interface Props {
 }
 
 const SHELL =
-  'pointer-events-auto rounded-[6px] border border-[#cfc7b5]/40 bg-[#ece6d9] ' +
-  'shadow-[0_2px_4px_rgba(0,0,0,0.18),0_6px_16px_-6px_rgba(0,0,0,0.5)] overflow-hidden text-left'
+  'pointer-events-auto rounded-[6px] border border-[#d4c8b2]/55 bg-[#eee6d7] ' +
+  'shadow-[0_1px_0_rgba(255,255,255,0.55)_inset,0_2px_5px_rgba(0,0,0,0.2),0_8px_20px_-8px_rgba(0,0,0,0.58)] overflow-hidden text-left'
 
 export function SupportArtifact({
   contribution,
@@ -50,26 +50,34 @@ export function SupportArtifact({
   const hasNote = !!contribution.note
   const mark = amountDisplay(contribution, viewerRole, isOwn)
 
-  // Note snippet beneath a photo only when the square is large enough to read it.
   const showNoteUnderPhoto = hasPhoto && hasNote && size >= 88
-  const pad = Math.round(size * 0.085)
+  const isMinimal = !hasPhoto && !hasNote
+  const pad = Math.round(size * (isMinimal ? 0.1 : 0.085))
 
   return (
     <motion.button
       type="button"
       onClick={onClick}
-      aria-label={`Card from ${isPrivate ? 'a private supporter' : contribution.displayName}`}
+      aria-label={isPrivate ? 'Private card' : `Card from ${contribution.displayName}`}
       initial={appear && !reducedMotion ? { opacity: 0, scale: 1.2 } : false}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       className={`${SHELL} relative flex flex-col`}
-      style={{ width: size, height: size, flexShrink: 0, padding: pad }}
+      style={{
+        width: size,
+        height: size,
+        flexShrink: 0,
+        padding: pad,
+        background:
+          'linear-gradient(145deg, rgba(242,235,222,0.98), rgba(231,222,204,0.97) 60%, rgba(218,207,185,0.94))',
+      }}
     >
-      {/* Header row: identity left, amount mark right. */}
-      <div className="flex items-center justify-between gap-1.5 shrink-0">
+      <div className="flex shrink-0 items-center justify-between gap-1.5">
         <span
-          className="min-w-0 truncate font-display leading-none text-[#2a251e]"
-          style={{ fontSize: Math.max(9, Math.round(size * 0.125)) }}
+          className={`min-w-0 truncate font-display leading-none text-[#2a251e] ${
+            isMinimal ? 'max-w-[82%]' : ''
+          }`}
+          style={{ fontSize: Math.max(9.5, Math.round(size * (isMinimal ? 0.14 : 0.125))) }}
         >
           {name}
         </span>
@@ -84,14 +92,19 @@ export function SupportArtifact({
         )}
       </div>
 
-      {/* Body zone. */}
       {hasPhoto ? (
-        <div className="mt-1.5 flex-1 min-h-0 flex flex-col gap-1">
-          <span className="block flex-1 min-h-0 overflow-hidden rounded-[3px] bg-[#2a251e]/8">
+        <div className="mt-1.5 flex min-h-0 flex-1 flex-col gap-1">
+          <span
+            className="block min-h-0 flex-1 overflow-hidden rounded-[3px] bg-[#2a251e]/8 p-[2px] shadow-[0_1px_2px_rgba(0,0,0,0.2)]"
+            style={{
+              transform: `rotate(${(stableTilt(contribution.id) / 10).toFixed(2)}deg)`,
+              background: '#f8f2e5',
+            }}
+          >
             <img
               src={contribution.imageUrl}
               alt=""
-              className="h-full w-full object-cover"
+              className="h-full w-full rounded-[2px] object-cover"
               draggable={false}
             />
           </span>
@@ -105,14 +118,14 @@ export function SupportArtifact({
           )}
         </div>
       ) : hasNote ? (
-        <div className="mt-1.5 flex-1 min-h-0 flex items-start">
+        <div className="mt-1.5 flex min-h-0 flex-1 items-center">
           <span
-            className="block overflow-hidden text-[#2a251e]/72"
+            className="block overflow-hidden font-display text-[#2a251e]/74"
             style={{
-              fontSize: Math.max(8.5, Math.round(size * 0.115)),
-              lineHeight: 1.28,
+              fontSize: Math.max(10, Math.round(size * 0.13)),
+              lineHeight: 1.1,
               display: '-webkit-box',
-              WebkitLineClamp: size >= 88 ? 3 : 2,
+              WebkitLineClamp: size >= 88 ? 4 : 3,
               WebkitBoxOrient: 'vertical',
             }}
           >
@@ -120,35 +133,23 @@ export function SupportArtifact({
           </span>
         </div>
       ) : (
-        // Minimal card (name + amount only): a quiet centered seal, never empty.
-        <div className="flex-1 min-h-0 flex items-center justify-center">
+        <div className="flex min-h-0 flex-1 items-center justify-center">
           <span
-            className="font-display tracking-wide text-[#2a251e]/22"
-            style={{ fontSize: Math.round(size * 0.34) }}
+            className="font-display tracking-wide text-[#2a251e]/20"
+            style={{ fontSize: Math.round(size * 0.3) }}
           >
             {isPrivate ? '·' : initials(contribution.displayName)}
           </span>
         </div>
       )}
+
+      {isMinimal && <span className="mt-auto block h-px w-2/3 bg-[#2a251e]/10" />}
     </motion.button>
   )
 }
 
-export function ClusterChip(props: { count: number; size: number; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={props.onClick}
-      aria-label={`${props.count} more cards`}
-      className={`${SHELL} flex items-center justify-center bg-[#ece6d9]/85`}
-      style={{ width: props.size, height: props.size, flexShrink: 0 }}
-    >
-      <span
-        className="font-medium text-[#2a251e]/80"
-        style={{ fontSize: Math.round(props.size * 0.18) }}
-      >
-        +{props.count}
-      </span>
-    </button>
-  )
+function stableTilt(seed: string): number {
+  let hash = 0
+  for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) | 0
+  return ((Math.abs(hash) % 41) - 20) / 2
 }

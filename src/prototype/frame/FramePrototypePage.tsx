@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { LivingFrame } from './LivingFrame'
 import { ContributionCardRail } from './ContributionCardRail'
@@ -20,6 +20,32 @@ const SEED_STATES = [0, 1, 4, 10, 20, 50]
 
 type Confirmation = { kind: 'paid' | 'note' } | null
 
+function WaitingCard({ onOpen }: { onOpen: () => void }) {
+  return (
+    <motion.button
+      layoutId="waiting-card"
+      type="button"
+      onClick={onOpen}
+      aria-label="Leave a card"
+      className="group relative mx-auto flex aspect-[5/3.15] w-full max-w-[17rem] flex-col overflow-hidden rounded-[10px]
+                 border border-[#d8ceb9]/65 bg-[#f1eadc] px-5 py-4 text-left
+                 shadow-[0_3px_7px_rgba(0,0,0,0.18),0_12px_28px_-12px_rgba(0,0,0,0.62)]
+                 transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-parchment/70"
+      style={{
+        background:
+          'linear-gradient(145deg, rgba(243,236,222,0.98), rgba(230,221,203,0.96) 58%, rgba(219,208,187,0.95))',
+      }}
+    >
+      <span className="font-display text-xl leading-none text-[#211c16] opacity-90">Leave a card</span>
+      <span className="mt-auto block h-px w-3/4 bg-[#211c16]/14" />
+      <span className="mt-3 block h-px w-1/2 bg-[#211c16]/10" />
+      <span className="absolute bottom-4 right-5 text-lg leading-none text-[#211c16] opacity-35 transition-opacity group-hover:opacity-55">
+        +
+      </span>
+    </motion.button>
+  )
+}
+
 export function FramePrototypePage() {
   const matColor = useMatColor(CREATOR.imageUrl)
   const [seedCount, setSeedCount] = useState(10)
@@ -30,9 +56,10 @@ export function FramePrototypePage() {
   const [justPlacedId, setJustPlacedId] = useState<string | null>(null)
   const [cardKey, setCardKey] = useState(0) // remounts the open card blank after placing
   const [detail, setDetail] = useState<Contribution | null>(null)
-  const [gallery, setGallery] = useState<Contribution[] | null>(null)
+  const [composerOpen, setComposerOpen] = useState(false)
   const [compact, setCompact] = useState(false)
   const [viewerRole, setViewerRole] = useState<ViewerRole>('public')
+  const composerRef = useRef<HTMLDivElement | null>(null)
   const debug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug')
 
   useEffect(() => {
@@ -55,23 +82,6 @@ export function FramePrototypePage() {
 
   const tile = compact ? 76 : 92
 
-  // Density: the lower rail is the home for recent cards; older ones spill from
-  // the lower corners; the oldest collapse into a +N cluster. Mobile keeps the
-  // fan short so it never exceeds the screen (full mobile pass comes later).
-  const railCap = compact
-    ? Math.min(cards.length, 6)
-    : cards.length <= 12
-      ? cards.length
-      : 10
-  // Side spill stays a desktop affordance; on mobile, overflow goes to the
-  // cluster so nothing bleeds off a narrow screen (full mobile pass is next).
-  const spillCap = compact ? 0 : cards.length > 12 ? 4 : 0
-  const rail = cards.slice(-railCap)
-  const overflow = cards.slice(0, Math.max(0, cards.length - railCap))
-  const spill = spillCap > 0 ? overflow.slice(-spillCap) : [] // guard: slice(-0) returns all
-  const clustered = overflow.length - spill.length
-  const clusterCards = overflow.slice(0, clustered)
-
   const place = async (draft: CardDraft) => {
     setBusy(true)
     setError(null)
@@ -89,6 +99,7 @@ export function FramePrototypePage() {
       const created = draft.amountCents ? await submitSupport(input) : await submitNote(input)
       setUserContribs((prev) => [...prev, created])
       setCardKey((k) => k + 1)
+      setComposerOpen(false)
       if (draft.amountCents) setJustPlacedId(created.id)
       setTimeout(() => setConfirmation({ kind: draft.amountCents ? 'paid' : 'note' }), draft.amountCents ? 800 : 350)
     } catch (e) {
@@ -120,55 +131,69 @@ export function FramePrototypePage() {
         </header>
 
         <div className="relative inline-flex flex-col items-center">
-          {/* The work, with its overflow climbing the lower edges. */}
-          <LivingFrame
-            imageUrl={CREATOR.imageUrl}
-            spill={spill}
-            tile={tile}
-            viewerRole={viewerRole}
-            isOwn={isOwn}
-            onOpen={setDetail}
-          />
+          {/* The work. The pile below is allowed to press into its lower edge. */}
+          <LivingFrame imageUrl={CREATOR.imageUrl} />
 
-          {/* The gathering, physically attached to the work. */}
-          <div className="w-full -mt-6 md:-mt-7 relative z-10">
+          {/* The gathering: a rail-rooted pile, not a row. */}
+          <div className="relative z-10 -mt-9 md:-mt-11">
             <ContributionCardRail
-              cards={rail}
-              clustered={clustered}
+              cards={cards}
               tile={tile}
               viewerRole={viewerRole}
               isOwn={isOwn}
               justPlacedId={justPlacedId}
               onOpen={setDetail}
-              onOpenCluster={() => setGallery(clusterCards)}
             />
           </div>
         </div>
 
-        {/* The waiting draft: visible, but not yet a form. */}
-        <div className="w-full max-w-[18rem] mt-14 md:mt-12">
-          <OpenContributionCard
-            key={cardKey}
-            creatorFirst={CREATOR.name.split(' ')[0] ?? CREATOR.name}
-            busy={busy}
-            error={error}
-            onPlace={(d) => void place(d)}
-          />
+        <div className="w-full max-w-[21rem] mt-5 md:mt-7">
+          <AnimatePresence initial={false} mode="wait">
+            {!composerOpen ? (
+              <WaitingCard
+                key="waiting"
+                onOpen={() => {
+                  setComposerOpen(true)
+                  window.setTimeout(() => {
+                    composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                  }, 80)
+                }}
+              />
+            ) : (
+            <motion.div
+              ref={composerRef}
+              key="composer"
+              layoutId="waiting-card"
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.99 }}
+              transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+              className="w-full"
+            >
+              <OpenContributionCard
+                key={cardKey}
+                creatorFirst={CREATOR.name.split(' ')[0] ?? CREATOR.name}
+                busy={busy}
+                error={error}
+                onPlace={(d) => void place(d)}
+              />
+            </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
       {/* Surfaces. */}
       <AnimatePresence>
-        {(detail || gallery) && (
+        {detail && (
           <SupportDetailModal
             contribution={detail}
-            gallery={gallery}
+            gallery={null}
             creatorName={CREATOR.name}
             viewerRole={viewerRole}
             isOwn={isOwn}
             onClose={() => {
               setDetail(null)
-              setGallery(null)
             }}
           />
         )}
@@ -229,6 +254,7 @@ export function FramePrototypePage() {
               setJustPlacedId(null)
               setConfirmation(null)
               setError(null)
+              setComposerOpen(false)
               setCardKey((k) => k + 1)
             }}
             className="px-1.5 py-1 border border-white/15"

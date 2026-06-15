@@ -1,27 +1,24 @@
-import { motion } from 'framer-motion'
+import { useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import type { Contribution } from './types'
-import { SupportArtifact, ClusterChip } from './SupportArtifact'
+import { SupportArtifact } from './SupportArtifact'
 import type { ViewerRole } from './viewer'
 
 /**
- * Paid-or-not, the cards gather here: a measured fan of square artifacts
- * accumulated into the lower edge of the work. One disciplined baseline with
- * small, stable, per-card variation — human but designed, never random. Square
- * widths are fixed; cards overlap into a fan so the most recent reads fully on
- * top and the rest peek beneath it.
+ * The rail is now the root of a pile, not a visible list. Cards press up into
+ * the lower edge of the work and hang below it in seeded, irregular layers:
+ * dense in the middle, looser at the edges, never paginated into a +N control.
  */
 interface Props {
-  cards: Contribution[] // chronological; newest renders last (on top, rightmost)
-  clustered: number
+  cards: Contribution[] // chronological; newest renders last and closer to front.
   tile: number
   viewerRole: ViewerRole
   isOwn: (c: Contribution) => boolean
   justPlacedId?: string | null
   onOpen: (c: Contribution) => void
-  onOpenCluster: () => void
 }
 
-type CardJitter = { rotateDeg: number; x: number; y: number; overlap: number }
+type PilePosition = { rotateDeg: number; x: number; y: number; z: number }
 
 function stableNumber(seed: string): number {
   let hash = 2166136261
@@ -32,65 +29,80 @@ function stableNumber(seed: string): number {
   return Math.abs(hash >>> 0)
 }
 
-function jitterFor(id: string, tile: number): CardJitter {
+function pilePositionFor(id: string, index: number, count: number, tile: number): PilePosition {
   const n = stableNumber(id)
-  // Overlap is a fraction of the tile so squares fan consistently at any size.
-  const base = Math.round(tile * 0.42)
+  const signed = ((n % 2001) - 1000) / 1000
+  const centerWeighted = Math.sign(signed) * Math.pow(Math.abs(signed), 1.75)
+  const compact = tile < 84
+  const maxSpread = compact ? 300 : 520
+  const densitySpread = tile * (2.4 + Math.min(count, 16) * 0.14)
+  const spread = Math.min(maxSpread, densitySpread)
+  const layer = Math.floor(index / 7)
+  const lowerStraggle = n % 11 === 0 ? Math.round(tile * 0.34) : 0
+
   return {
-    rotateDeg: ((n % 51) - 25) / 20, // -1.25 to +1.25
-    x: (Math.floor(n / 41) % 7) - 3,
-    y: (Math.floor(n / 369) % 5) - 2,
-    overlap: base + (Math.floor(n / 2583) % 7), // base .. base+6
+    rotateDeg: ((Math.floor(n / 37) % 101) - 50) / 15, // about -3.3deg to +3.3deg
+    x: Math.round(centerWeighted * (spread / 2) + ((Math.floor(n / 97) % 23) - 11)),
+    y: Math.round(
+      tile * 0.08 +
+        (Math.floor(n / 211) % Math.round(tile * 0.72)) +
+        Math.min(layer * 4, tile * 0.46) +
+        lowerStraggle,
+    ),
+    z: index + (n % 5),
   }
 }
 
 export function ContributionCardRail({
   cards,
-  clustered,
   tile,
   viewerRole,
   isOwn,
   justPlacedId,
   onOpen,
-  onOpenCluster,
 }: Props) {
-  if (cards.length === 0 && clustered === 0) return null
+  const reducedMotion = useReducedMotion()
+  const [liftedId, setLiftedId] = useState<string | null>(null)
+  const count = cards.length
+  if (count === 0) return null
 
-  let cursor = 0
-  const items = cards.map((card, index) => {
-    const jitter = jitterFor(card.id, tile)
-    if (index > 0) cursor -= jitter.overlap
-    const left = cursor
-    cursor += tile
-    return { card, index, jitter, left }
-  })
-
-  const clusterLeft = clustered > 0 ? cursor - (items.length > 0 ? Math.round(tile * 0.42) : 0) : 0
-  const totalWidth = clustered > 0 ? clusterLeft + tile : cursor
-
+  const pileHeight = Math.round(tile * (count > 24 ? 2.25 : count > 8 ? 2.05 : 1.72))
+  const pileWidth = Math.min(tile < 84 ? 340 : 560, Math.round(tile * (3.1 + Math.min(count, 12) * 0.18)))
   return (
     <div
-      className="relative w-full pointer-events-none"
-      style={{ height: tile + 18 }}
-      aria-label="Cards left with the artist"
+      className="relative pointer-events-none"
+      style={{ width: pileWidth, height: pileHeight }}
+      aria-label="Cards gathered with the artist"
     >
       <div
         aria-hidden
-        className="absolute left-1/2 bottom-1 h-5 rounded-full bg-black/20 blur-md"
-        style={{ width: Math.min(totalWidth + 42, 460), transform: 'translateX(-50%)' }}
+        className="absolute left-1/2 top-6 h-16 rounded-full bg-black/28 blur-xl"
+        style={{ width: Math.min(pileWidth, 520), transform: 'translateX(-50%)' }}
       />
 
-      {items.map(({ card, index, jitter, left }) => (
-        <motion.div
-          key={card.id}
-          layout
-          initial={card.id === justPlacedId ? { opacity: 0, y: -16, scale: 1.06 } : false}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute bottom-2"
-          style={{ left: `calc(50% + ${left - totalWidth / 2}px)`, zIndex: index + 1 }}
-        >
-          <div style={{ transform: `translate(${jitter.x}px, ${jitter.y}px) rotate(${jitter.rotateDeg}deg)` }}>
+      {cards.map((card, index) => {
+        const position = pilePositionFor(card.id, index, count, tile)
+        const lifted = liftedId === card.id
+        return (
+          <motion.div
+            key={card.id}
+            layout
+            initial={card.id === justPlacedId && !reducedMotion ? { opacity: 0, y: -24, scale: 1.06 } : false}
+            animate={{
+              opacity: 1,
+              x: position.x,
+              y: lifted && !reducedMotion ? position.y - Math.round(tile * 0.22) : position.y,
+              rotate: lifted && !reducedMotion ? position.rotateDeg * 0.45 : position.rotateDeg,
+              scale: lifted && !reducedMotion ? 1.07 : 1,
+            }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute left-1/2 top-0"
+            style={{ marginLeft: -tile / 2, zIndex: lifted ? 1000 : position.z }}
+            onPointerEnter={() => setLiftedId(card.id)}
+            onPointerLeave={() => setLiftedId((current) => (current === card.id ? null : current))}
+            onFocus={() => setLiftedId(card.id)}
+            onBlur={() => setLiftedId((current) => (current === card.id ? null : current))}
+          >
             <SupportArtifact
               contribution={card}
               size={tile}
@@ -98,18 +110,10 @@ export function ContributionCardRail({
               isOwn={isOwn(card)}
               onClick={() => onOpen(card)}
             />
-          </div>
-        </motion.div>
-      ))}
+          </motion.div>
+        )
+      })}
 
-      {clustered > 0 && (
-        <div
-          className="absolute bottom-2"
-          style={{ left: `calc(50% + ${clusterLeft - totalWidth / 2}px)`, zIndex: items.length + 1 }}
-        >
-          <ClusterChip count={clustered} size={tile} onClick={onOpenCluster} />
-        </div>
-      )}
     </div>
   )
 }
