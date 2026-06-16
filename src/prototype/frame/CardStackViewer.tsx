@@ -7,7 +7,7 @@ import { ReadableContributionCard } from './ReadableContributionCard'
 interface Props {
   cards: Contribution[]
   entryCardId: string | null
-  ownCardId: string | null
+  ownCardIds: string[]
   creatorName: string
   viewerRole: ViewerRole
   isOwn: (c: Contribution) => boolean
@@ -17,27 +17,33 @@ interface Props {
 export function buildStackOrder(
   cards: Contribution[],
   entryCardId: string | null,
-  ownCardId: string | null,
+  ownCardIds: string[] = [],
 ): Contribution[] {
   const entryCard = entryCardId ? cards.find((card) => card.id === entryCardId) : null
-  const ownCard = ownCardId ? cards.find((card) => card.id === ownCardId) : null
-  const excludedIds = new Set([entryCard?.id, ownCard?.id].filter((id): id is string => Boolean(id)))
+  const ownIdSet = new Set(ownCardIds)
+  const excludedIds = new Set([entryCard?.id].filter((id): id is string => Boolean(id)))
 
-  const remainingCards = cards
+  const ownCards = cards
+    .filter((card) => ownIdSet.has(card.id) && !excludedIds.has(card.id))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+  ownCards.forEach((card) => excludedIds.add(card.id))
+
+  const otherCards = cards
     .filter((card) => !excludedIds.has(card.id))
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
   return [
     entryCard,
-    ownCard && ownCard.id !== entryCard?.id ? ownCard : null,
-    ...remainingCards,
+    ...ownCards,
+    ...otherCards,
   ].filter((card): card is Contribution => Boolean(card))
 }
 
 export function CardStackViewer({
   cards,
   entryCardId,
-  ownCardId,
+  ownCardIds,
   creatorName,
   viewerRole,
   isOwn,
@@ -47,8 +53,8 @@ export function CardStackViewer({
   const closeRef = useRef<HTMLButtonElement | null>(null)
   const creatorFirst = creatorName.split(' ')[0] ?? creatorName
   const orderedCards = useMemo(
-    () => buildStackOrder(cards, entryCardId, ownCardId),
-    [cards, entryCardId, ownCardId],
+    () => buildStackOrder(cards, entryCardId, ownCardIds),
+    [cards, entryCardId, ownCardIds],
   )
   const [index, setIndex] = useState(0)
   const current = orderedCards[index]

@@ -21,28 +21,6 @@ const SEED_STATES = [0, 1, 4, 10, 20, 50, 100]
 type Confirmation = { kind: 'paid' | 'note' } | null
 type StackState = { isOpen: boolean; entryCardId: string | null }
 
-function WaitingCard({ onOpen }: { onOpen: () => void }) {
-  return (
-    <motion.button
-      layoutId="waiting-card"
-      type="button"
-      onClick={onOpen}
-      aria-label="Leave a card"
-      className="group mx-auto flex h-[132px] w-[132px] flex-col items-center justify-center gap-2 overflow-hidden rounded-[8px]
-                 border border-[#d8ceb9]/75 p-3 md:h-[156px] md:w-[156px]
-                 shadow-[0_1px_0_rgba(255,255,255,0.62)_inset,0_4px_10px_rgba(0,0,0,0.28),0_20px_42px_-16px_rgba(0,0,0,0.86)]
-                 transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-parchment/70"
-      style={{
-        background:
-          'linear-gradient(145deg, rgba(243,236,222,0.98), rgba(230,221,203,0.96) 58%, rgba(219,208,187,0.95))',
-      }}
-    >
-      <span className="font-display text-[18px] leading-tight text-[#211c16]">Leave yours</span>
-      <span className="text-[34px] leading-none text-[#211c16] opacity-60 transition-opacity group-hover:opacity-78">+</span>
-    </motion.button>
-  )
-}
-
 export function FramePrototypePage() {
   const matColor = useMatColor(CREATOR.imageUrl)
   const [seedCount, setSeedCount] = useState(10)
@@ -76,10 +54,16 @@ export function FramePrototypePage() {
   // Cards the visitor placed this session are "their own" — the only cards a
   // giver-role viewer sees the actual amount on.
   const ownIds = useMemo(() => new Set(userContribs.map((c) => c.id)), [userContribs])
-  const ownCardId = userContribs[userContribs.length - 1]?.id ?? null
+  const ownCardIds = useMemo(() => userContribs.map((c) => c.id), [userContribs])
   const isOwn = (c: Contribution) => ownIds.has(c.id)
 
   const tile = compact ? 76 : 92
+  const openComposer = () => {
+    setComposerOpen(true)
+    window.setTimeout(() => {
+      composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 80)
+  }
 
   const place = async (draft: CardDraft) => {
     setBusy(true)
@@ -143,61 +127,46 @@ export function FramePrototypePage() {
         </header>
 
         <div className="relative inline-flex flex-col items-center">
-          {/* The work. The pile below is allowed to press into its lower edge. */}
+          {/* The work. The basin below is allowed to meet its lower edge. */}
           <LivingFrame imageUrl={CREATOR.imageUrl} />
 
-          {/* The gathering: a rail-rooted pile, not a row. */}
-          <div className="relative z-10 -mt-9 md:-mt-11">
+          {/* The basin: gathered paper presence, readable only when picked up. */}
+          <div className="relative z-10 -mt-8 md:-mt-10">
             <ContributionCardRail
               cards={cards}
               tile={tile}
               viewerRole={viewerRole}
               isOwn={isOwn}
               justPlacedId={justPlacedId}
+              isGathering={stackState.isOpen}
+              hideLeaveYours={composerOpen}
+              onLeaveYours={openComposer}
               onOpen={openStack}
             />
           </div>
-          {cards.length === 0 && (
-            <div className="mt-5 max-w-[19rem] text-center">
-              <p className="font-display text-lg text-parchment/90">Be the first to leave a card.</p>
-              <p className="mt-1 text-sm leading-snug text-parchment/56">
-                If something stays with you, leave it here for {CREATOR.name.split(' ')[0]}.
-              </p>
-            </div>
-          )}
         </div>
 
-        <div className="w-full max-w-[21rem] -mt-1 md:mt-0">
+        <div className="w-full max-w-[21rem] mt-3 md:mt-2">
           <AnimatePresence initial={false} mode="wait">
-            {!composerOpen ? (
-              <WaitingCard
-                key="waiting"
-                onOpen={() => {
-                  setComposerOpen(true)
-                  window.setTimeout(() => {
-                    composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                  }, 80)
-                }}
-              />
-            ) : (
-            <motion.div
-              ref={composerRef}
-              key="composer"
-              layoutId="waiting-card"
-              initial={{ opacity: 0, y: 18, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.99 }}
-              transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full"
-            >
-              <OpenContributionCard
-                key={cardKey}
-                creatorFirst={CREATOR.name.split(' ')[0] ?? CREATOR.name}
-                busy={busy}
-                error={error}
-                onPlace={(d) => void place(d)}
-              />
-            </motion.div>
+            {composerOpen && (
+              <motion.div
+                ref={composerRef}
+                key="composer"
+                layoutId="waiting-card"
+                initial={{ opacity: 0, y: 18, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.99 }}
+                transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+                className="w-full"
+              >
+                <OpenContributionCard
+                  key={cardKey}
+                  creatorFirst={CREATOR.name.split(' ')[0] ?? CREATOR.name}
+                  busy={busy}
+                  error={error}
+                  onPlace={(d) => void place(d)}
+                />
+              </motion.div>
             )}
           </AnimatePresence>
         </div>
@@ -209,7 +178,7 @@ export function FramePrototypePage() {
           <CardStackViewer
             cards={cards}
             entryCardId={stackState.entryCardId}
-            ownCardId={ownCardId}
+            ownCardIds={ownCardIds}
             creatorName={CREATOR.name}
             viewerRole={viewerRole}
             isOwn={isOwn}
@@ -236,7 +205,6 @@ export function FramePrototypePage() {
               <p className="font-display text-base text-parchment/95">
                 Your card was left with {CREATOR.name.split(' ')[0]}.
               </p>
-              {confirmation.kind === 'paid' && <p className="mt-1 text-xs text-parchment/58">Amount attached.</p>}
             </button>
           </motion.div>
         )}
