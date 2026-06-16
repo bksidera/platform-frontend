@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { LivingFrame } from './LivingFrame'
 import { ContributionCardRail } from './ContributionCardRail'
 import { OpenContributionCard, type CardDraft } from './OpenContributionCard'
-import { SupportDetailModal } from './SupportDetailModal'
+import { CardStackViewer } from './CardStackViewer'
 import { CREATOR, seedSupport } from './seeds'
 import { submitSupport, submitNote, loadUserContributions, clearUserContributions } from './contributions'
 import { useMatColor } from '../useMatColor'
@@ -16,9 +16,10 @@ import type { Contribution } from './types'
  * simply omit it.
  */
 
-const SEED_STATES = [0, 1, 4, 10, 20, 50]
+const SEED_STATES = [0, 1, 4, 10, 20, 50, 100]
 
 type Confirmation = { kind: 'paid' | 'note' } | null
+type StackState = { isOpen: boolean; entryCardId: string | null }
 
 function WaitingCard({ onOpen }: { onOpen: () => void }) {
   return (
@@ -51,11 +52,12 @@ export function FramePrototypePage() {
   const [confirmation, setConfirmation] = useState<Confirmation>(null)
   const [justPlacedId, setJustPlacedId] = useState<string | null>(null)
   const [cardKey, setCardKey] = useState(0) // remounts the open card blank after placing
-  const [detail, setDetail] = useState<Contribution | null>(null)
+  const [stackState, setStackState] = useState<StackState>({ isOpen: false, entryCardId: null })
   const [composerOpen, setComposerOpen] = useState(false)
   const [compact, setCompact] = useState(false)
   const [viewerRole, setViewerRole] = useState<ViewerRole>('public')
   const composerRef = useRef<HTMLDivElement | null>(null)
+  const stackReturnRef = useRef<HTMLElement | null>(null)
   const debug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug')
 
   useEffect(() => {
@@ -74,6 +76,7 @@ export function FramePrototypePage() {
   // Cards the visitor placed this session are "their own" — the only cards a
   // giver-role viewer sees the actual amount on.
   const ownIds = useMemo(() => new Set(userContribs.map((c) => c.id)), [userContribs])
+  const ownCardId = userContribs[userContribs.length - 1]?.id ?? null
   const isOwn = (c: Contribution) => ownIds.has(c.id)
 
   const tile = compact ? 76 : 92
@@ -103,6 +106,16 @@ export function FramePrototypePage() {
     } finally {
       setBusy(false)
     }
+  }
+
+  const openStack = (card: Contribution, opener: HTMLElement) => {
+    stackReturnRef.current = opener
+    setStackState({ isOpen: true, entryCardId: card.id })
+  }
+
+  const closeStack = () => {
+    setStackState({ isOpen: false, entryCardId: null })
+    window.requestAnimationFrame(() => stackReturnRef.current?.focus())
   }
 
   return (
@@ -138,7 +151,7 @@ export function FramePrototypePage() {
               viewerRole={viewerRole}
               isOwn={isOwn}
               justPlacedId={justPlacedId}
-              onOpen={setDetail}
+              onOpen={openStack}
             />
           </div>
         </div>
@@ -181,16 +194,15 @@ export function FramePrototypePage() {
 
       {/* Surfaces. */}
       <AnimatePresence>
-        {detail && (
-          <SupportDetailModal
-            contribution={detail}
-            gallery={null}
+        {stackState.isOpen && (
+          <CardStackViewer
+            cards={cards}
+            entryCardId={stackState.entryCardId}
+            ownCardId={ownCardId}
             creatorName={CREATOR.name}
             viewerRole={viewerRole}
             isOwn={isOwn}
-            onClose={() => {
-              setDetail(null)
-            }}
+            onClose={closeStack}
           />
         )}
       </AnimatePresence>

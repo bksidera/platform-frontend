@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import type { Contribution } from './types'
 import { amountDisplay, type ViewerRole } from './viewer'
@@ -28,7 +29,7 @@ interface Props {
   viewerRole?: ViewerRole
   isOwn?: boolean
   appear?: boolean
-  onClick: () => void
+  onClick: (event: MouseEvent<HTMLButtonElement>) => void
 }
 
 const SHELL =

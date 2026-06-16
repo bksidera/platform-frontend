@@ -15,10 +15,11 @@ interface Props {
   viewerRole: ViewerRole
   isOwn: (c: Contribution) => boolean
   justPlacedId?: string | null
-  onOpen: (c: Contribution) => void
+  onOpen: (c: Contribution, opener: HTMLElement) => void
 }
 
 type PilePosition = { rotateDeg: number; x: number; y: number; z: number }
+const BASE_LAYOUT_SEED = 'living-frame-pile-v1'
 
 function stableNumber(seed: string): number {
   let hash = 2166136261
@@ -30,7 +31,7 @@ function stableNumber(seed: string): number {
 }
 
 function pilePositionFor(id: string, index: number, count: number, tile: number): PilePosition {
-  const n = stableNumber(id)
+  const n = stableNumber(`${BASE_LAYOUT_SEED}:${id}`)
   const signed = ((n % 2001) - 1000) / 1000
   // Higher exponent = more cards cluster toward center, edges calmer
   const centerWeighted = Math.sign(signed) * Math.pow(Math.abs(signed), 2.1)
@@ -86,6 +87,7 @@ export function ContributionCardRail({
       {cards.map((card, index) => {
         const position = pilePositionFor(card.id, index, count, tile)
         const lifted = liftedId === card.id
+        const ownCard = isOwn(card)
         return (
           <motion.div
             key={card.id}
@@ -100,7 +102,7 @@ export function ContributionCardRail({
             }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className="absolute left-1/2 top-0"
-            style={{ marginLeft: -tile / 2, zIndex: lifted ? 1000 : position.z }}
+            style={{ marginLeft: -tile / 2, zIndex: lifted ? 1000 : ownCard ? 900 + index : position.z }}
             onPointerEnter={() => setLiftedId(card.id)}
             onPointerLeave={() => setLiftedId((current) => (current === card.id ? null : current))}
             onFocus={() => setLiftedId(card.id)}
@@ -110,8 +112,8 @@ export function ContributionCardRail({
               contribution={card}
               size={tile}
               viewerRole={viewerRole}
-              isOwn={isOwn(card)}
-              onClick={() => onOpen(card)}
+              isOwn={ownCard}
+              onClick={(event) => onOpen(card, event.currentTarget)}
             />
           </motion.div>
         )
