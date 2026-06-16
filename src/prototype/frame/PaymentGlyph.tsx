@@ -8,10 +8,11 @@ export function PaymentGlyph({
   tone = 'ink',
   size = 9,
 }: {
-  tone?: 'ink' | 'parchment'
+  tone?: 'ink' | 'parchment' | 'green'
   size?: number
 }) {
-  const color = tone === 'ink' ? '#2a251e' : '#ece6d9'
+  const color = tone === 'parchment' ? '#ece6d9' : tone === 'green' ? '#3a7554' : '#2a251e'
+  const opacity = tone === 'parchment' ? 0.58 : tone === 'green' ? 0.82 : 0.46
   return (
     <svg
       width={size}
@@ -21,8 +22,8 @@ export function PaymentGlyph({
       aria-hidden
       style={{ display: 'block', flexShrink: 0 }}
     >
-      <circle cx="6" cy="6" r="5.1" fill={color} opacity={tone === 'ink' ? 0.46 : 0.58} />
-      <circle cx="4.3" cy="4.2" r="1.05" fill={tone === 'ink' ? '#f4eddf' : '#fff8e8'} opacity="0.28" />
+      <circle cx="6" cy="6" r="5.1" fill={color} opacity={opacity} />
+      <circle cx="4.3" cy="4.2" r="1.05" fill={tone === 'parchment' ? '#fff8e8' : '#f4eddf'} opacity="0.28" />
     </svg>
   )
 }

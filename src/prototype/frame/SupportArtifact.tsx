@@ -32,7 +32,7 @@ interface Props {
 }
 
 const SHELL =
-  'pointer-events-auto rounded-[6px] border border-[#d4c8b2]/55 bg-[#eee6d7] ' +
+  'pointer-events-auto rounded-[6px] border border-[#d4c8b2]/55 bg-[#eee6d7] text-[#2a251e] ' +
   'shadow-[0_1px_0_rgba(255,255,255,0.55)_inset,0_2px_5px_rgba(0,0,0,0.2),0_8px_20px_-8px_rgba(0,0,0,0.58)] overflow-hidden text-left'
 
 export function SupportArtifact({
@@ -81,7 +81,7 @@ export function SupportArtifact({
         >
           {name}
         </span>
-        {mark.kind === 'glyph' && <PaymentGlyph size={Math.round(size * 0.1)} />}
+        {mark.kind === 'glyph' && <PaymentGlyph tone="green" size={Math.round(size * 0.1)} />}
         {mark.kind === 'amount' && (
           <span
             className="shrink-0 font-medium leading-none text-[#2a251e]/55"
