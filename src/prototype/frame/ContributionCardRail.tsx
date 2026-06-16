@@ -19,7 +19,7 @@ interface Props {
 
 type BasinItem = {
   card: Contribution
-  kind: 'mini' | 'tile' | 'photo'
+  kind: 'mini' | 'tile' | 'photo' | 'sliver'
   size: number
   x: number
   y: number
@@ -27,7 +27,7 @@ type BasinItem = {
   z: number
 }
 
-const BASE_LAYOUT_SEED = 'living-frame-paper-basin-v1'
+const BASE_LAYOUT_SEED = 'living-frame-foot-gather-v1'
 
 function stableNumber(seed: string): number {
   let hash = 2166136261
@@ -46,19 +46,20 @@ function firstName(name: string): string {
 function visibleCards(cards: Contribution[]): Contribution[] {
   if (cards.length <= 24) return cards
 
-  const newest = cards.slice(-18)
-  const sampled = cards
-    .slice(0, -18)
-    .filter((card) => stableNumber(`${BASE_LAYOUT_SEED}:sample:${card.id}`) % 3 === 0)
-    .slice(-32)
+  const newest = cards.slice(-20)
+  const earlier = cards
+    .slice(0, -20)
+    .filter((card) => stableNumber(`${BASE_LAYOUT_SEED}:sample:${card.id}`) % 4 === 0)
+    .slice(-6)
 
-  return [...sampled, ...newest]
+  return [...earlier, ...newest]
 }
 
 function itemKind(card: Contribution, index: number, count: number): BasinItem['kind'] {
   if (count <= 5) return 'mini'
   if (card.imageUrl && index % 3 !== 0) return 'photo'
-  if (index % 9 === 1 || index % 11 === 4 || index >= count - 3) return 'mini'
+  if (index >= count - 4 || index === 1 || index === Math.floor(count * 0.62)) return 'mini'
+  if (count > 18 && index % 4 === 0) return 'sliver'
   return 'tile'
 }
 
@@ -67,31 +68,44 @@ function buildBasinItems(cards: Contribution[], tile: number, width: number, hei
   const count = shown.length
   const compact = tile < 84
   const centerX = width / 2
-  const centerY = height * 0.52
+  const baseY = height * 0.62
 
   return shown.map((card, index) => {
     const n = stableNumber(`${BASE_LAYOUT_SEED}:${card.id}`)
     const kind = itemKind(card, index, count)
     const normalized = count <= 1 ? 0 : (index / (count - 1)) * 2 - 1
-    const centerBias = Math.sign(normalized) * Math.pow(Math.abs(normalized), 0.78)
+    const centerBias = Math.sign(normalized) * Math.pow(Math.abs(normalized), 0.9)
     const jitterX = ((Math.floor(n / 37) % 101) - 50) / 50
     const jitterY = ((Math.floor(n / 97) % 101) - 50) / 50
-    const layer = Math.floor(index / 12)
+    const depth = Math.floor(index / 8)
     const size =
       kind === 'mini'
-        ? Math.round(tile * (count <= 5 ? 0.9 : compact ? 0.66 : 0.7))
+        ? Math.round(tile * (count <= 5 ? 0.86 : compact ? 0.66 : 0.7))
         : kind === 'photo'
           ? Math.round(tile * (compact ? 0.48 : 0.5))
-          : Math.round(tile * (compact ? 0.34 : 0.36))
+          : kind === 'sliver'
+            ? Math.round(tile * (compact ? 0.31 : 0.34))
+            : Math.round(tile * (compact ? 0.38 : 0.4))
+    const verticalTuck =
+      kind === 'mini'
+        ? compact ? 5 : 7
+        : kind === 'photo'
+          ? compact ? 0 : 2
+          : compact ? -4 : -3
 
     return {
       card,
       kind,
       size,
-      x: Math.round(centerX + centerBias * width * 0.37 + jitterX * width * 0.08),
-      y: Math.round(centerY + jitterY * height * 0.22 + Math.min(layer * 4, 24)),
-      rotate: ((Math.floor(n / 211) % 121) - 60) / 14,
-      z: index + (n % 7),
+      x: Math.round(centerX + centerBias * width * (count <= 5 ? 0.2 : 0.34) + jitterX * width * 0.035),
+      y: Math.round(
+        baseY +
+          jitterY * height * (count <= 5 ? 0.06 : 0.095) +
+          Math.min(depth * 3.5, 18) +
+          verticalTuck,
+      ),
+      rotate: ((Math.floor(n / 211) % 121) - 60) / (count <= 5 ? 18 : 15),
+      z: index + (kind === 'mini' ? 80 : 0) + (n % 7),
     }
   })
 }
@@ -112,6 +126,7 @@ function BasinTile({
   const privateCard = card.visibility === 'private'
   const name = privateCard ? 'Private' : firstName(card.displayName)
   const hasPhoto = kind === 'photo' && !!card.imageUrl
+  const isSliver = kind === 'sliver'
 
   return (
     <button
@@ -123,7 +138,7 @@ function BasinTile({
                  transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-parchment/70"
       style={{
         width: size,
-        height: Math.round(size * (hasPhoto ? 1.05 : 0.74)),
+        height: Math.round(size * (isSliver ? 0.46 : hasPhoto ? 1.05 : 0.74)),
         background:
           'linear-gradient(145deg, rgba(243,236,222,0.98), rgba(231,222,204,0.97) 62%, rgba(218,207,185,0.94))',
       }}
@@ -175,7 +190,7 @@ function LeaveYoursCard({
   tile: number
   onOpen: () => void
 }) {
-  const size = count === 0 ? Math.round(tile * 1.45) : Math.round(tile * 0.92)
+  const size = count === 0 ? Math.round(tile * 1.28) : Math.round(tile * 0.92)
 
   return (
     <motion.button
@@ -214,100 +229,95 @@ export function ContributionCardRail({
   const count = cards.length
   const compact = tile < 84
   const width = compact ? 338 : 548
-  const height = count === 0 ? Math.round(tile * 1.95) : Math.round(tile * (count > 24 ? 2.45 : count > 5 ? 2.15 : 1.85))
+  const height = count === 0 ? 0 : Math.round(tile * (count > 24 ? 1.62 : count > 5 ? 1.5 : 1.35))
   const items = buildBasinItems(cards, tile, width, height)
-  const leaveX = count === 0 ? width / 2 : width * (compact ? 0.72 : 0.76)
-  const leaveY = count === 0 ? height * 0.5 : height * 0.62
 
   return (
-    <motion.div
-      className="relative pointer-events-none"
-      style={{ width, height }}
-      aria-label="Cards gathered with the artist"
-      animate={{ opacity: isGathering ? 0.58 : 1, scale: isGathering && !reducedMotion ? 0.985 : 1 }}
-      transition={{ duration: reducedMotion ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }}
-    >
-      <div
-        aria-hidden
-        className="absolute inset-x-0 top-3 bottom-0 rounded-[32px] border border-[#eadfca]/18 shadow-[0_20px_55px_-32px_rgba(0,0,0,0.9)]"
-        style={{
-          background:
-            'linear-gradient(180deg, rgba(238,229,211,0.11), rgba(238,229,211,0.045) 42%, rgba(20,16,12,0.08))',
-        }}
-      />
-      <div
-        aria-hidden
-        className="absolute left-1/2 top-3 h-12 rounded-full bg-black/24 blur-xl"
-        style={{ width: Math.min(width * 0.82, 440), transform: 'translateX(-50%)' }}
-      />
-
-      {items.map((item) => {
-        const ownCard = isOwn(item.card)
-        const isNew = item.card.id === justPlacedId
-        const sharedStyle = {
-          left: item.x,
-          top: item.y,
-          marginLeft: -item.size / 2,
-          marginTop: -item.size / 2,
-          zIndex: ownCard ? 900 + item.z : item.z,
-        }
-
-        return (
-          <motion.div
-            key={item.card.id}
-            initial={isNew && !reducedMotion ? { opacity: 0, y: -18, scale: 1.14, rotate: item.rotate * 0.4 } : false}
-            animate={{
-              opacity: 1,
-              x: isGathering && !reducedMotion ? width / 2 - item.x : 0,
-              y: isGathering && !reducedMotion ? height * 0.48 - item.y : 0,
-              rotate: isGathering && !reducedMotion ? item.rotate * 0.25 : item.rotate,
-              scale: isGathering && !reducedMotion ? 0.72 : 1,
-            }}
-            transition={{ duration: reducedMotion ? 0 : 0.38, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute"
-            style={sharedStyle}
-          >
-            {item.kind === 'mini' ? (
-              <SupportArtifact
-                contribution={item.card}
-                size={item.size}
-                viewerRole={viewerRole}
-                isOwn={ownCard}
-                onClick={(event) => onOpen(item.card, event.currentTarget)}
-              />
-            ) : (
-              <BasinTile
-                item={item}
-                viewerRole={viewerRole}
-                isOwn={ownCard}
-                onClick={(event) => onOpen(item.card, event.currentTarget)}
-              />
-            )}
-          </motion.div>
-        )
-      })}
-
-      {!hideLeaveYours && (
+    <div className="pointer-events-none flex flex-col items-center" aria-label="Cards gathered with the artist">
+      {count > 0 && (
         <motion.div
-          className="absolute"
-          style={{
-            left: leaveX,
-            top: leaveY,
-            marginLeft: -(count === 0 ? Math.round(tile * 1.45) : Math.round(tile * 0.92)) / 2,
-            marginTop: -(count === 0 ? Math.round(tile * 1.45) : Math.round(tile * 0.92)) / 2,
-            zIndex: 1200,
-          }}
+          className="relative"
+          style={{ width, height }}
+          animate={{ opacity: isGathering ? 0.5 : 1, scale: isGathering && !reducedMotion ? 0.975 : 1 }}
+          transition={{ duration: reducedMotion ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div
+            aria-hidden
+            className="absolute left-1/2 bottom-0 h-16 rounded-full bg-black/30 blur-2xl"
+            style={{ width: Math.min(width * 0.82, 430), transform: 'translateX(-50%)' }}
+          />
+          <div
+            aria-hidden
+            className="absolute left-1/2 bottom-5 h-20 rounded-full"
+            style={{
+              width: Math.min(width * 0.78, 390),
+              transform: 'translateX(-50%)',
+              background:
+                'radial-gradient(ellipse at center, rgba(18,14,10,0.19) 0%, rgba(18,14,10,0.09) 43%, rgba(18,14,10,0) 76%)',
+            }}
+          />
+
+          {items.map((item) => {
+            const ownCard = isOwn(item.card)
+            const isNew = item.card.id === justPlacedId
+            const sharedStyle = {
+              left: item.x,
+              top: item.y,
+              marginLeft: -item.size / 2,
+              marginTop: -item.size / 2,
+              zIndex: ownCard ? 900 + item.z : item.z,
+            }
+
+            return (
+              <motion.div
+                key={item.card.id}
+                initial={isNew && !reducedMotion ? { opacity: 0, y: 30, scale: 0.96, rotate: item.rotate * 0.4 } : false}
+                animate={{
+                  opacity: 1,
+                  x: isGathering && !reducedMotion ? width / 2 - item.x : 0,
+                  y: isGathering && !reducedMotion ? height * 0.58 - item.y : 0,
+                  rotate: isGathering && !reducedMotion ? item.rotate * 0.18 : item.rotate,
+                  scale: isGathering && !reducedMotion ? 0.72 : 1,
+                }}
+                transition={{ duration: reducedMotion ? 0 : 0.38, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute"
+                style={sharedStyle}
+              >
+                {item.kind === 'mini' ? (
+                  <SupportArtifact
+                    contribution={item.card}
+                    size={item.size}
+                    viewerRole={viewerRole}
+                    isOwn={ownCard}
+                    onClick={(event) => onOpen(item.card, event.currentTarget)}
+                  />
+                ) : (
+                  <BasinTile
+                    item={item}
+                    viewerRole={viewerRole}
+                    isOwn={ownCard}
+                    onClick={(event) => onOpen(item.card, event.currentTarget)}
+                  />
+                )}
+              </motion.div>
+            )
+          })}
+        </motion.div>
+      )}
+
+      {!hideLeaveYours && !isGathering && (
+        <motion.div
+          className={count > 0 ? 'relative z-10 mt-3 md:mt-3' : 'relative z-10 mt-0'}
           animate={{
-            x: isGathering && !reducedMotion ? width / 2 - leaveX : 0,
-            y: isGathering && !reducedMotion ? height * 0.48 - leaveY : 0,
+            opacity: isGathering ? 0 : 1,
             rotate: count === 0 ? -1 : 2.5,
-            scale: isGathering && !reducedMotion ? 0.82 : 1,
+            scale: isGathering && !reducedMotion ? 0.96 : 1,
           }}
           transition={{ duration: reducedMotion ? 0 : 0.38, ease: [0.22, 1, 0.36, 1] }}
         >
           <LeaveYoursCard count={count} tile={tile} onOpen={onLeaveYours} />
         </motion.div>
       )}
-    </motion.div>
+    </div>
   )
 }

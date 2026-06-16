@@ -127,11 +127,11 @@ export function FramePrototypePage() {
         </header>
 
         <div className="relative inline-flex flex-col items-center">
-          {/* The work. The basin below is allowed to meet its lower edge. */}
+          {/* The work. Completed cards gather at its foot. */}
           <LivingFrame imageUrl={CREATOR.imageUrl} />
 
-          {/* The basin: gathered paper presence, readable only when picked up. */}
-          <div className="relative z-10 -mt-8 md:-mt-10">
+          {/* Gathered paper presence, readable only when picked up. */}
+          <div className={`relative z-10 ${cards.length > 0 ? '-mt-8 md:-mt-10' : 'mt-4'}`}>
             <ContributionCardRail
               cards={cards}
               tile={tile}
