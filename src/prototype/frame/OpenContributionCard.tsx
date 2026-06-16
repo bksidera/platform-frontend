@@ -8,6 +8,8 @@ import { motion } from 'framer-motion'
  */
 
 const PRESETS = [500, 1000, 2500]
+const NAME_LIMIT = 24
+const NOTE_LIMIT = 120
 
 export interface CardDraft {
   displayName: string
@@ -40,9 +42,9 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
   const [justCard, setJustCard] = useState(false)
 
   const dollars = amountCents ? Math.round(amountCents / 100) : null
-  const supportSelected = !justCard && !!amountCents && amountCents >= 100
+  const amountSelected = !justCard && !!amountCents && amountCents >= 100
   const hasCardContent = note.trim().length > 0 || !!imageUrl
-  const canPlace = supportSelected || (justCard && hasCardContent)
+  const canPlace = amountSelected || (justCard && hasCardContent)
   const needsCardContent = justCard && !hasCardContent
 
   const place = () => {
@@ -82,10 +84,10 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <p className="font-display text-xl leading-none text-[#211c16]">Leave a card for {creatorFirst}</p>
-        {supportSelected && (
+        {amountSelected && (
           <span
             className="h-2.5 w-2.5 rounded-full bg-[#3a7554] shadow-[0_1px_0_rgba(255,255,255,0.45)_inset]"
-            aria-label="Support attached"
+            aria-label="Amount attached"
             role="img"
           />
         )}
@@ -98,8 +100,9 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
           autoFocus
           aria-label="Your name"
           placeholder="Alex"
+          maxLength={NAME_LIMIT}
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => setName(e.target.value.slice(0, NAME_LIMIT))}
           className="w-full bg-transparent border-0 border-b border-[#211c16]/15 rounded-none px-0 pb-2
                      font-display text-xl text-[#211c16] placeholder:text-[#211c16]/50 focus:outline-none focus:border-[#211c16]/40"
         />
@@ -109,18 +112,23 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
       <label className="block mb-4">
         <span className="mb-1.5 block text-[11px] font-medium text-[#211c16]/58">Your card</span>
         <textarea
-          maxLength={240}
+          maxLength={NOTE_LIMIT}
           rows={3}
           aria-label="Your card"
           placeholder="What stayed with you?"
           value={note}
-          onChange={(e) => setNote(e.target.value)}
+          onChange={(e) => setNote(e.target.value.slice(0, NOTE_LIMIT))}
           className="w-full bg-transparent px-0 py-0.5 text-[14px] text-[#211c16]/85 placeholder:text-[#211c16]/50 resize-none focus:outline-none leading-6"
           style={{
             backgroundImage:
               'repeating-linear-gradient(to bottom, transparent 0, transparent 23px, rgba(33,28,22,0.12) 23px, rgba(33,28,22,0.12) 24px)',
           }}
         />
+        {note.length >= 90 && (
+          <span className="mt-1 block text-right text-[10px] text-[#211c16]/38">
+            {note.length}/{NOTE_LIMIT}
+          </span>
+        )}
       </label>
 
       {/* Photo */}
@@ -142,8 +150,9 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
             <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#211c16]/14 text-base leading-none">
               +
             </span>
-            <span>
-              Add a photo <span className="text-[#211c16]/36">Optional</span>
+            <span className="flex flex-col leading-tight">
+              <span>Add a photo</span>
+              <span className="text-[11px] text-[#211c16]/36">Optional</span>
             </span>
             <input
               type="file"
@@ -164,9 +173,9 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
       {/* Support */}
       <div className="space-y-2.5">
         <div>
-          <span className="block text-[11px] font-medium text-[#211c16]/68">Attach support</span>
+          <span className="block text-[11px] font-medium text-[#211c16]/68">Amount</span>
           <p className="mt-0.5 text-[11px] leading-snug text-[#211c16]/55">
-            If you can, attach support to your card. Amounts stay private.
+            Optional. Only {creatorFirst} sees the amount.
           </p>
         </div>
         <div className="flex gap-1.5">
@@ -228,18 +237,9 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
           Just the card
         </button>
 
-        {supportSelected && dollars && (
-          <div className="rounded-[7px] border border-[#3a7554]/20 bg-[#3a7554]/[0.06] px-3 py-2">
-            <p className="text-[11px] leading-snug text-[#211c16]/62">
-              Your card will show a green mark. Only {creatorFirst} sees the amount.
-            </p>
-            <p className="mt-1 text-[11px] font-medium text-[#211c16]/72">Support attached: ${dollars}</p>
-          </div>
-        )}
-
         {needsCardContent && (
           <p className="text-[11px] leading-snug text-[#211c16]/50">
-            Add a note, photo, or support to leave a card.
+            Add a note, photo, or amount to leave a card.
           </p>
         )}
       </div>
@@ -255,13 +255,11 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
                    disabled:border-[#211c16]/8 disabled:bg-[#211c16]/8 disabled:text-[#211c16]/32 disabled:shadow-none"
       >
         {busy
-          ? supportSelected
-            ? 'Attaching support…'
-            : 'Leaving card…'
+          ? 'Leaving card…'
           : `Leave card for ${creatorFirst}`}
       </button>
-      {supportSelected && dollars && !busy && (
-        <p className="mt-2 text-center text-[11px] text-[#211c16]/50">Support attached: ${dollars}</p>
+      {amountSelected && dollars && !busy && (
+        <p className="mt-2 text-center text-[11px] text-[#211c16]/50">Amount: ${dollars}</p>
       )}
     </motion.div>
   )

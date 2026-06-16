@@ -178,7 +178,7 @@ export function CardStackViewer({
             >
               ‹
             </button>
-            <p className="text-xs" aria-live="polite">
+            <p className="min-w-[4.5rem] text-center text-xs tabular-nums" aria-live="polite">
               {index + 1} of {count}
             </p>
             <button

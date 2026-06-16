@@ -34,7 +34,7 @@ export function ReadableContributionCard({
       <div className="flex items-start justify-between gap-4">
         <p className={`font-display text-xl leading-tight ${paper ? 'text-[#211c16]' : 'text-parchment/95'}`}>{name}</p>
         {mark.kind === 'glyph' && (
-          <span className="pt-1.5" role="img" aria-label="Support attached">
+          <span className="pt-1.5" role="img" aria-label="Amount attached">
             <PaymentGlyph tone={paper ? 'green' : 'parchment'} size={paper ? 12 : 11} />
           </span>
         )}
@@ -46,9 +46,14 @@ export function ReadableContributionCard({
       </div>
       {contribution.note && (
         <p
-          className={`font-display leading-relaxed ${
+          className={`overflow-hidden font-display leading-relaxed ${
             paper ? 'text-[18px] text-[#2a251e]/78' : 'text-[15px] text-parchment/78'
           }`}
+          style={{
+            display: '-webkit-box',
+            WebkitBoxOrient: 'vertical',
+            WebkitLineClamp: 4,
+          }}
         >
           {contribution.note}
         </p>

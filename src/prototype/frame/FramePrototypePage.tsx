@@ -21,14 +21,6 @@ const SEED_STATES = [0, 1, 4, 10, 20, 50, 100]
 type Confirmation = { kind: 'paid' | 'note' } | null
 type StackState = { isOpen: boolean; entryCardId: string | null }
 
-function SupportMarkExplainer() {
-  return (
-    <p className="mx-auto mt-2 max-w-[18rem] text-center text-[11px] leading-snug text-parchment/54">
-      Green mark = support attached. Amounts stay private.
-    </p>
-  )
-}
-
 function WaitingCard({ onOpen }: { onOpen: () => void }) {
   return (
     <motion.button
@@ -36,17 +28,17 @@ function WaitingCard({ onOpen }: { onOpen: () => void }) {
       type="button"
       onClick={onOpen}
       aria-label="Leave a card"
-      className="group mx-auto flex h-[82px] w-[82px] flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[7px]
-                 border border-[#d8ceb9]/65 p-2
-                 shadow-[0_2px_6px_rgba(0,0,0,0.26),0_12px_28px_-10px_rgba(0,0,0,0.78)]
+      className="group mx-auto flex h-[132px] w-[132px] flex-col items-center justify-center gap-2 overflow-hidden rounded-[8px]
+                 border border-[#d8ceb9]/75 p-3 md:h-[156px] md:w-[156px]
+                 shadow-[0_1px_0_rgba(255,255,255,0.62)_inset,0_4px_10px_rgba(0,0,0,0.28),0_20px_42px_-16px_rgba(0,0,0,0.86)]
                  transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-parchment/70"
       style={{
         background:
           'linear-gradient(145deg, rgba(243,236,222,0.98), rgba(230,221,203,0.96) 58%, rgba(219,208,187,0.95))',
       }}
     >
-      <span className="font-display text-[11px] leading-tight text-[#211c16]">Leave a card</span>
-      <span className="text-xl leading-none text-[#211c16] opacity-70 transition-opacity group-hover:opacity-85">+</span>
+      <span className="font-display text-[18px] leading-tight text-[#211c16]">Leave yours</span>
+      <span className="text-[34px] leading-none text-[#211c16] opacity-60 transition-opacity group-hover:opacity-78">+</span>
     </motion.button>
   )
 }
@@ -144,12 +136,10 @@ export function FramePrototypePage() {
           <p className="text-[11px] tracking-[0.14em] text-parchment/50 mt-1.5">
             {CREATOR.context}
           </p>
-          <p className="mt-3 font-display text-base text-parchment/82">Cards left with {CREATOR.name.split(' ')[0]}</p>
-          {cards.length > 0 && (
-            <p className="mt-1 text-[11px] text-parchment/42">
-              {cards.length} {cards.length === 1 ? 'card' : 'cards'}
-            </p>
-          )}
+          <p className="mt-3 font-display text-base text-parchment/82">
+            Cards left with {CREATOR.name.split(' ')[0]}
+            {cards.length > 0 && <span className="font-body text-[11px] text-parchment/38"> · {cards.length}</span>}
+          </p>
         </header>
 
         <div className="relative inline-flex flex-col items-center">
@@ -175,10 +165,9 @@ export function FramePrototypePage() {
               </p>
             </div>
           )}
-          {cards.length > 0 && <SupportMarkExplainer />}
         </div>
 
-        <div className="w-full max-w-[21rem] mt-1 md:mt-2">
+        <div className="w-full max-w-[21rem] -mt-1 md:mt-0">
           <AnimatePresence initial={false} mode="wait">
             {!composerOpen ? (
               <WaitingCard
@@ -211,7 +200,6 @@ export function FramePrototypePage() {
             </motion.div>
             )}
           </AnimatePresence>
-          {cards.length === 0 && <SupportMarkExplainer />}
         </div>
       </div>
 
@@ -248,9 +236,7 @@ export function FramePrototypePage() {
               <p className="font-display text-base text-parchment/95">
                 Your card was left with {CREATOR.name.split(' ')[0]}.
               </p>
-              <p className="mt-1 text-xs text-parchment/58">
-                {confirmation.kind === 'paid' ? 'Support attached privately.' : 'Thank you for adding to the frame.'}
-              </p>
+              {confirmation.kind === 'paid' && <p className="mt-1 text-xs text-parchment/58">Amount attached.</p>}
             </button>
           </motion.div>
         )}

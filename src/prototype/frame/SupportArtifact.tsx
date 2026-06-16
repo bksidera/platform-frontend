@@ -20,6 +20,7 @@ export function initials(name: string): string {
 }
 
 function firstName(name: string): string {
+  if (name === 'A card was left') return 'A card'
   return name.trim().split(/\s+/)[0] ?? name
 }
 
@@ -83,7 +84,7 @@ export function SupportArtifact({
           {name}
         </span>
         {mark.kind === 'glyph' && (
-          <span role="img" aria-label="Support attached">
+          <span role="img" aria-label="Amount attached">
             <PaymentGlyph tone="green" size={Math.round(size * 0.1)} />
           </span>
         )}
@@ -130,7 +131,7 @@ export function SupportArtifact({
               fontSize: Math.max(10, Math.round(size * 0.13)),
               lineHeight: 1.1,
               display: '-webkit-box',
-              WebkitLineClamp: size >= 88 ? 4 : 3,
+              WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
             }}
           >
