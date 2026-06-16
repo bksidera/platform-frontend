@@ -43,6 +43,7 @@ export function SupportDetailModal(props: {
             creatorFirst={creatorFirst}
             viewerRole={viewerRole}
             isOwn={isOwn(contribution)}
+            surface="dark"
           />
         )}
         {gallery && (
@@ -57,6 +58,7 @@ export function SupportDetailModal(props: {
                   creatorFirst={creatorFirst}
                   viewerRole={viewerRole}
                   isOwn={isOwn(c)}
+                  surface="dark"
                 />
               </div>
             ))}

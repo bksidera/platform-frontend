@@ -37,8 +37,8 @@ function WaitingCard({ onOpen }: { onOpen: () => void }) {
           'linear-gradient(145deg, rgba(243,236,222,0.98), rgba(230,221,203,0.96) 58%, rgba(219,208,187,0.95))',
       }}
     >
-      <span className="font-display text-[11px] leading-tight text-[#211c16]/82">Leave a card</span>
-      <span className="text-xl leading-none text-[#211c16]/48 transition-opacity group-hover:text-[#211c16]/70">+</span>
+      <span className="font-display text-[11px] leading-tight text-[#211c16]">Leave a card</span>
+      <span className="text-xl leading-none text-[#211c16] opacity-70 transition-opacity group-hover:opacity-85">+</span>
     </motion.button>
   )
 }

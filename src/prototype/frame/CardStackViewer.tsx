@@ -123,7 +123,7 @@ export function CardStackViewer({
           {[0, 1, 2].map((layer) => (
             <motion.div
               key={`${current.id}-layer-${layer}`}
-              className="absolute inset-0 rounded-[14px] border border-white/10 bg-[#201b14]"
+              className="absolute inset-0 rounded-[12px] border border-[#d4c8b2]/45 bg-[#e7dcc7] shadow-[0_12px_34px_-18px_rgba(0,0,0,0.75)]"
               initial={
                 reducedMotion
                   ? false
@@ -151,13 +151,18 @@ export function CardStackViewer({
             animate={{ opacity: 1, x: 0, y: 0, scale: 1, rotate: 0 }}
             exit={reducedMotion ? { opacity: 0 } : { opacity: 0, x: -22, scale: 0.985 }}
             transition={{ duration: reducedMotion ? 0 : 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="relative z-10 max-h-[min(72vh,620px)] overflow-y-auto rounded-[14px] border border-white/10 bg-[#1a160f] px-6 py-6 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.85)] cursor-grab active:cursor-grabbing"
+            className="relative z-10 max-h-[min(72vh,620px)] overflow-y-auto rounded-[12px] border border-[#d4c8b2]/65 px-6 py-6 text-[#2a251e] shadow-[0_1px_0_rgba(255,255,255,0.72)_inset,0_30px_80px_-22px_rgba(0,0,0,0.86)] cursor-grab active:cursor-grabbing"
+            style={{
+              background:
+                'linear-gradient(145deg, rgba(244,237,224,0.99), rgba(231,222,204,0.98) 58%, rgba(219,208,187,0.96))',
+            }}
           >
             <ReadableContributionCard
               contribution={current}
               creatorFirst={creatorFirst}
               viewerRole={viewerRole}
               isOwn={isOwn(current)}
+              surface="paper"
             />
           </motion.article>
         </AnimatePresence>
