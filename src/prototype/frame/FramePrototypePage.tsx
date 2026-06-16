@@ -21,6 +21,14 @@ const SEED_STATES = [0, 1, 4, 10, 20, 50, 100]
 type Confirmation = { kind: 'paid' | 'note' } | null
 type StackState = { isOpen: boolean; entryCardId: string | null }
 
+function SupportMarkExplainer() {
+  return (
+    <p className="mx-auto mt-2 max-w-[18rem] text-center text-[11px] leading-snug text-parchment/54">
+      Green mark = support attached. Amounts stay private.
+    </p>
+  )
+}
+
 function WaitingCard({ onOpen }: { onOpen: () => void }) {
   return (
     <motion.button
@@ -135,8 +143,13 @@ export function FramePrototypePage() {
           <h1 className="font-display text-2xl text-parchment/95 leading-none">{CREATOR.name}</h1>
           <p className="text-[11px] tracking-[0.14em] text-parchment/50 mt-1.5">
             {CREATOR.context}
-            {cards.length > 0 && <> · {cards.length} {cards.length === 1 ? 'card' : 'cards'} with {CREATOR.name.split(' ')[0]}</>}
           </p>
+          <p className="mt-3 font-display text-base text-parchment/82">Cards left with {CREATOR.name.split(' ')[0]}</p>
+          {cards.length > 0 && (
+            <p className="mt-1 text-[11px] text-parchment/42">
+              {cards.length} {cards.length === 1 ? 'card' : 'cards'}
+            </p>
+          )}
         </header>
 
         <div className="relative inline-flex flex-col items-center">
@@ -154,6 +167,15 @@ export function FramePrototypePage() {
               onOpen={openStack}
             />
           </div>
+          {cards.length === 0 && (
+            <div className="mt-5 max-w-[19rem] text-center">
+              <p className="font-display text-lg text-parchment/90">Be the first to leave a card.</p>
+              <p className="mt-1 text-sm leading-snug text-parchment/56">
+                If something stays with you, leave it here for {CREATOR.name.split(' ')[0]}.
+              </p>
+            </div>
+          )}
+          {cards.length > 0 && <SupportMarkExplainer />}
         </div>
 
         <div className="w-full max-w-[21rem] mt-1 md:mt-2">
@@ -189,6 +211,7 @@ export function FramePrototypePage() {
             </motion.div>
             )}
           </AnimatePresence>
+          {cards.length === 0 && <SupportMarkExplainer />}
         </div>
       </div>
 
@@ -223,9 +246,10 @@ export function FramePrototypePage() {
               className="pointer-events-auto bg-ink/95 border border-line rounded-[8px] px-6 py-3.5 text-center"
             >
               <p className="font-display text-base text-parchment/95">
-                {confirmation.kind === 'paid'
-                  ? `Yours is with ${CREATOR.name.split(' ')[0]}.`
-                  : `Your note is with ${CREATOR.name.split(' ')[0]}.`}
+                Your card was left with {CREATOR.name.split(' ')[0]}.
+              </p>
+              <p className="mt-1 text-xs text-parchment/58">
+                {confirmation.kind === 'paid' ? 'Support attached privately.' : 'Thank you for adding to the frame.'}
               </p>
             </button>
           </motion.div>

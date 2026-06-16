@@ -82,7 +82,11 @@ export function SupportArtifact({
         >
           {name}
         </span>
-        {mark.kind === 'glyph' && <PaymentGlyph tone="green" size={Math.round(size * 0.1)} />}
+        {mark.kind === 'glyph' && (
+          <span role="img" aria-label="Support attached">
+            <PaymentGlyph tone="green" size={Math.round(size * 0.1)} />
+          </span>
+        )}
         {mark.kind === 'amount' && (
           <span
             className="shrink-0 font-medium leading-none text-[#2a251e]/55"

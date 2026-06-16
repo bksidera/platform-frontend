@@ -22,19 +22,25 @@ export function ReadableContributionCard({
   const name = contribution.visibility === 'private' ? 'Private card' : contribution.displayName
   const mark = amountDisplay(contribution, viewerRole, isOwn)
   const paper = surface === 'paper'
+  const privateAmountText =
+    mark.kind === 'amount' && viewerRole === 'giver' && isOwn
+      ? `You attached ${mark.text}`
+      : mark.kind === 'amount'
+        ? `${mark.text} attached`
+        : null
 
   return (
     <div className={paper ? 'space-y-4 text-[#2a251e]' : 'space-y-3.5'}>
       <div className="flex items-start justify-between gap-4">
         <p className={`font-display text-xl leading-tight ${paper ? 'text-[#211c16]' : 'text-parchment/95'}`}>{name}</p>
         {mark.kind === 'glyph' && (
-          <span className="pt-1.5">
+          <span className="pt-1.5" role="img" aria-label="Support attached">
             <PaymentGlyph tone={paper ? 'green' : 'parchment'} size={paper ? 12 : 11} />
           </span>
         )}
         {mark.kind === 'amount' && (
           <span className={`pt-1 text-sm font-medium ${paper ? 'text-[#2a251e]/60' : 'text-parchment/55'}`}>
-            {mark.text}
+            {privateAmountText}
           </span>
         )}
       </div>

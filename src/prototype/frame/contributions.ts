@@ -38,7 +38,7 @@ export async function submitSupport(input: CreateContributionInput): Promise<Con
   if (input.supportAmountCents <= 0) throw new Error('An amount is required')
   if (MOCK_PAYMENT) {
     const payment = await mockAuthorizePayment(input.supportAmountCents)
-    if (!payment.ok) throw new Error('The card could not be placed')
+    if (!payment.ok) throw new Error('Support wasn’t attached. Your card is still here.')
   }
   const contribution = buildContribution(input)
   persist(contribution)
@@ -47,7 +47,7 @@ export async function submitSupport(input: CreateContributionInput): Promise<Con
 
 export async function submitNote(input: CreateContributionInput): Promise<Contribution> {
   if (!input.note?.trim() && !input.imageUrl) {
-    throw new Error('A note or photo is required')
+    throw new Error('Add a note, photo, or support to leave a card.')
   }
   const contribution = buildContribution({ ...input, supportAmountCents: 0 })
   persist(contribution)

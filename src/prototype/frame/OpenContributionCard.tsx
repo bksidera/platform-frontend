@@ -37,34 +37,40 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
   const [amountCents, setAmountCents] = useState<number | null>(1000)
   const [customOpen, setCustomOpen] = useState(false)
   const [custom, setCustom] = useState('')
-  const [optOut, setOptOut] = useState(false)
+  const [justCard, setJustCard] = useState(false)
 
   const dollars = amountCents ? Math.round(amountCents / 100) : null
-  const canPlacePaid = !optOut && !!amountCents && amountCents >= 100 && name.trim().length > 0
-  const canPlaceUnpaid = optOut && name.trim().length > 0 && (note.trim().length > 0 || !!imageUrl)
-  const needsCardContent = optOut && name.trim().length > 0 && !note.trim() && !imageUrl
+  const supportSelected = !justCard && !!amountCents && amountCents >= 100
+  const hasCardContent = note.trim().length > 0 || !!imageUrl
+  const canPlace = supportSelected || (justCard && hasCardContent)
+  const needsCardContent = justCard && !hasCardContent
 
   const place = () => {
-    if (!canPlacePaid && !canPlaceUnpaid) return
+    if (!canPlace) return
     onPlace({
-      displayName: name.trim(),
+      displayName: name.trim() || 'A card was left',
       note: note.trim(),
       imageUrl,
-      amountCents: optOut ? null : amountCents,
+      amountCents: justCard ? null : amountCents,
     })
   }
 
   const selectAmount = (cents: number) => {
-    setOptOut(false)
+    setJustCard(false)
     setAmountCents(cents)
     setCustomOpen(false)
     setCustom('')
   }
 
   const openCustom = () => {
-    setOptOut(false)
+    setJustCard(false)
     setCustomOpen(true)
     setAmountCents(null)
+  }
+
+  const selectJustCard = () => {
+    setJustCard(true)
+    setCustomOpen(false)
   }
 
   return (
@@ -75,15 +81,23 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
-        <p className="font-display text-xl leading-none text-[#211c16]">Leave a card</p>
-        <span className="h-2 w-2 rounded-full bg-[#211c16]/20 shadow-[0_1px_0_rgba(255,255,255,0.35)_inset]" aria-hidden />
+        <p className="font-display text-xl leading-none text-[#211c16]">Leave a card for {creatorFirst}</p>
+        {supportSelected && (
+          <span
+            className="h-2.5 w-2.5 rounded-full bg-[#3a7554] shadow-[0_1px_0_rgba(255,255,255,0.45)_inset]"
+            aria-label="Support attached"
+            role="img"
+          />
+        )}
       </div>
 
       {/* Name */}
       <label className="block mb-4">
+        <span className="mb-1.5 block text-[11px] font-medium text-[#211c16]/58">Your name</span>
         <input
           autoFocus
-          placeholder="Your name"
+          aria-label="Your name"
+          placeholder="Alex"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="w-full bg-transparent border-0 border-b border-[#211c16]/15 rounded-none px-0 pb-2
@@ -93,10 +107,12 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
 
       {/* Note */}
       <label className="block mb-4">
+        <span className="mb-1.5 block text-[11px] font-medium text-[#211c16]/58">Your card</span>
         <textarea
           maxLength={240}
           rows={3}
-          placeholder="Your note"
+          aria-label="Your card"
+          placeholder="What stayed with you?"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           className="w-full bg-transparent px-0 py-0.5 text-[14px] text-[#211c16]/85 placeholder:text-[#211c16]/50 resize-none focus:outline-none leading-6"
@@ -122,11 +138,13 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
             </button>
           </div>
         ) : (
-          <label className="inline-flex cursor-pointer items-center gap-1.5 text-sm text-[#211c16]/40 hover:text-[#211c16]/65 transition-colors">
+          <label className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 text-sm text-[#211c16]/52 hover:text-[#211c16]/72 transition-colors">
             <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#211c16]/14 text-base leading-none">
               +
             </span>
-            Add a photo
+            <span>
+              Add a photo <span className="text-[#211c16]/36">Optional</span>
+            </span>
             <input
               type="file"
               accept="image/*"
@@ -143,12 +161,12 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
       {/* Divider */}
       <div className="my-4 h-px bg-[#211c16]/10" />
 
-      {/* Amount */}
+      {/* Support */}
       <div className="space-y-2.5">
         <div>
-          <span className="block text-[11px] font-medium text-[#211c16]/62">Amount</span>
+          <span className="block text-[11px] font-medium text-[#211c16]/68">Attach support</span>
           <p className="mt-0.5 text-[11px] leading-snug text-[#211c16]/55">
-            If this moved you, an amount can travel with your card.
+            If you can, attach support to your card. Amounts stay private.
           </p>
         </div>
         <div className="flex gap-1.5">
@@ -157,9 +175,9 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
               key={cents}
               type="button"
               onClick={() => selectAmount(cents)}
-              aria-pressed={amountCents === cents && !customOpen && !optOut}
-              className={`flex-1 rounded-[6px] border py-1.5 text-sm transition-colors ${
-                amountCents === cents && !customOpen && !optOut
+              aria-pressed={amountCents === cents && !customOpen && !justCard}
+              className={`min-h-11 flex-1 rounded-[6px] border py-2 text-sm transition-colors ${
+                amountCents === cents && !customOpen && !justCard
                   ? 'border-[#211c16]/70 bg-[#211c16] font-medium text-[#f2ebdd]'
                   : 'border-[#211c16]/16 text-[#211c16]/58 hover:border-[#211c16]/30 hover:text-[#211c16]/85'
               }`}
@@ -170,9 +188,9 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
           <button
             type="button"
             onClick={openCustom}
-            aria-pressed={customOpen && !optOut}
-            className={`flex-1 rounded-[6px] border py-1.5 text-sm transition-colors ${
-              customOpen && !optOut
+            aria-pressed={customOpen && !justCard}
+            className={`min-h-11 flex-1 rounded-[6px] border py-2 text-sm transition-colors ${
+              customOpen && !justCard
                 ? 'border-[#211c16]/70 bg-[#211c16] font-medium text-[#f2ebdd]'
                 : 'border-[#211c16]/16 text-[#211c16]/58 hover:border-[#211c16]/30 hover:text-[#211c16]/85'
             }`}
@@ -181,7 +199,7 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
           </button>
         </div>
 
-        {customOpen && !optOut && (
+        {customOpen && !justCard && (
           <input
             autoFocus
             inputMode="decimal"
@@ -198,23 +216,30 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
 
         <button
           type="button"
-          onClick={() => setOptOut((c) => !c)}
-          aria-pressed={optOut}
-          className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-left text-xs transition-colors ${
-            optOut
-              ? 'border-[#211c16]/45 bg-[#211c16]/[0.08] text-[#211c16]/82'
-              : 'border-[#211c16]/12 text-[#211c16]/58 hover:border-[#211c16]/28 hover:text-[#211c16]/76'
+          onClick={selectJustCard}
+          aria-pressed={justCard}
+          className={`inline-flex min-h-11 w-full items-center gap-2 rounded-[6px] border px-3 py-2 text-left text-sm transition-colors ${
+            justCard
+              ? 'border-[#211c16]/55 bg-[#211c16]/[0.08] text-[#211c16]/86'
+              : 'border-[#211c16]/16 text-[#211c16]/62 hover:border-[#211c16]/30 hover:text-[#211c16]/82'
           }`}
         >
-          <span className={`h-2 w-2 rounded-full ${optOut ? 'bg-[#211c16]/70' : 'bg-[#211c16]/18'}`} />
-          Leave only the card
+          <span className={`h-2 w-2 rounded-full ${justCard ? 'bg-[#211c16]/70' : 'bg-[#211c16]/18'}`} />
+          Just the card
         </button>
 
-        {optOut && (
-          <p className="text-[11px] leading-snug text-[#211c16]/45">
-            {needsCardContent
-              ? 'Add a note or photo to leave only the card.'
-              : 'Your card will be placed without an amount.'}
+        {supportSelected && dollars && (
+          <div className="rounded-[7px] border border-[#3a7554]/20 bg-[#3a7554]/[0.06] px-3 py-2">
+            <p className="text-[11px] leading-snug text-[#211c16]/62">
+              Your card will show a green mark. Only {creatorFirst} sees the amount.
+            </p>
+            <p className="mt-1 text-[11px] font-medium text-[#211c16]/72">Support attached: ${dollars}</p>
+          </div>
+        )}
+
+        {needsCardContent && (
+          <p className="text-[11px] leading-snug text-[#211c16]/50">
+            Add a note, photo, or support to leave a card.
           </p>
         )}
       </div>
@@ -223,20 +248,21 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
 
       <button
         type="button"
-        disabled={busy || (!canPlacePaid && !canPlaceUnpaid)}
+        disabled={busy || !canPlace}
         onClick={place}
         className="mt-5 w-full rounded-[9px] border border-[#211c16] bg-[#211c16] py-3 font-display text-base text-[#f2ebdd]
                    shadow-[0_8px_18px_rgba(0,0,0,0.18)] transition-opacity
                    disabled:border-[#211c16]/8 disabled:bg-[#211c16]/8 disabled:text-[#211c16]/32 disabled:shadow-none"
       >
         {busy
-          ? 'One moment'
-          : optOut
-            ? `Leave this with ${creatorFirst}`
-            : dollars
-              ? `Place $${dollars} with ${creatorFirst}`
-              : `Place this with ${creatorFirst}`}
+          ? supportSelected
+            ? 'Attaching support…'
+            : 'Leaving card…'
+          : `Leave card for ${creatorFirst}`}
       </button>
+      {supportSelected && dollars && !busy && (
+        <p className="mt-2 text-center text-[11px] text-[#211c16]/50">Support attached: ${dollars}</p>
+      )}
     </motion.div>
   )
 }
