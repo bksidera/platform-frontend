@@ -27,19 +27,19 @@ function WaitingCard({ onOpen }: { onOpen: () => void }) {
       type="button"
       onClick={onOpen}
       aria-label="Leave a card"
-      className="group relative mx-auto flex aspect-[5/3.15] w-full max-w-[17rem] flex-col overflow-hidden rounded-[10px]
-                 border border-[#d8ceb9]/65 bg-[#f1eadc] px-5 py-4 text-left
-                 shadow-[0_3px_7px_rgba(0,0,0,0.18),0_12px_28px_-12px_rgba(0,0,0,0.62)]
+      className="group relative mx-auto flex h-[82px] w-[82px] flex-col overflow-hidden rounded-[7px]
+                 border border-[#d8ceb9]/65 bg-[#f1eadc] p-2 text-left
+                 shadow-[0_2px_5px_rgba(0,0,0,0.2),0_10px_24px_-12px_rgba(0,0,0,0.68)]
                  transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-parchment/70"
       style={{
         background:
           'linear-gradient(145deg, rgba(243,236,222,0.98), rgba(230,221,203,0.96) 58%, rgba(219,208,187,0.95))',
       }}
     >
-      <span className="font-display text-xl leading-none text-[#211c16] opacity-90">Leave a card</span>
+      <span className="font-display text-[11px] leading-tight text-[#211c16] opacity-90">Leave a card</span>
       <span className="mt-auto block h-px w-3/4 bg-[#211c16]/14" />
-      <span className="mt-3 block h-px w-1/2 bg-[#211c16]/10" />
-      <span className="absolute bottom-4 right-5 text-lg leading-none text-[#211c16] opacity-35 transition-opacity group-hover:opacity-55">
+      <span className="mt-1.5 block h-px w-1/2 bg-[#211c16]/10" />
+      <span className="absolute bottom-2 right-2 text-base leading-none text-[#211c16] opacity-35 transition-opacity group-hover:opacity-55">
         +
       </span>
     </motion.button>

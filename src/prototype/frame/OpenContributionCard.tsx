@@ -61,8 +61,8 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
       style={cardStyle}
     >
       <div className="flex items-center justify-between gap-4">
-        <p className="font-display text-xl leading-none text-[#211c16]/88">Leave a card</p>
-        <span className="h-2.5 w-2.5 rounded-full bg-[#211c16]/14 shadow-[0_1px_0_rgba(255,255,255,0.35)_inset]" aria-hidden />
+        <p className="font-display text-2xl leading-none text-[#211c16]">Leave a card</p>
+        <span className="h-2.5 w-2.5 rounded-full bg-[#211c16]/22 shadow-[0_1px_0_rgba(255,255,255,0.35)_inset]" aria-hidden />
       </div>
 
       <label className="block">
@@ -72,7 +72,7 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="w-full bg-transparent border-0 border-b border-[#211c16]/18 rounded-none px-0 py-1.5
-                     font-display text-lg text-[#211c16] placeholder:text-[#211c16]/22 focus:outline-none focus:border-[#211c16]/42"
+                     font-display text-xl text-[#211c16] placeholder:text-[#211c16]/45 focus:outline-none focus:border-[#211c16]/50"
         />
       </label>
 
@@ -83,7 +83,7 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
           placeholder="What do you want to leave with Maria?"
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          className="w-full bg-transparent px-0 py-0.5 text-[13px] text-[#211c16]/82 placeholder:text-[#211c16]/34 resize-none focus:outline-none leading-6"
+          className="w-full bg-transparent px-0 py-0.5 text-[14px] text-[#211c16]/88 placeholder:text-[#211c16]/45 resize-none focus:outline-none leading-6"
           style={{
             backgroundImage:
               'repeating-linear-gradient(to bottom, transparent 0, transparent 23px, rgba(33,28,22,0.16) 23px, rgba(33,28,22,0.16) 24px)',
@@ -109,8 +109,8 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
             </button>
           </div>
         ) : (
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-full py-1 pr-2 text-xs text-[#211c16]/58 transition-colors hover:text-[#211c16]/82">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#211c16]/[0.055] text-base leading-none text-[#211c16]/42">
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-full py-1 pr-2 text-sm text-[#211c16]/68 transition-colors hover:text-[#211c16]/90">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[#211c16]/12 bg-[#211c16]/[0.065] text-base leading-none text-[#211c16]/58">
               +
             </span>
             Add a photo
@@ -128,17 +128,17 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
       </div>
 
       <div
-        className={`space-y-2.5 border-t border-[#211c16]/10 pt-3 transition-opacity ${
+        className={`space-y-2.5 rounded-[10px] border border-[#211c16]/10 bg-[#211c16]/[0.035] p-2.5 transition-opacity ${
           optOut ? 'opacity-55' : ''
         }`}
       >
         <div>
-          <span className="block text-[11px] text-[#211c16]/48">Amount</span>
-          <p className="mt-0.5 text-[11px] leading-snug text-[#211c16]/50">
+          <span className="block text-[11px] font-medium text-[#211c16]/62">Amount</span>
+          <p className="mt-0.5 text-[11px] leading-snug text-[#211c16]/58">
             If this moved you, an amount can travel with your card.
           </p>
         </div>
-        <div className="flex items-center justify-between gap-2 text-sm">
+        <div className="flex gap-2 text-sm">
           {PRESETS.map((cents) => (
             <button
               key={cents}
@@ -150,10 +150,10 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
                 setCustom('')
               }}
               aria-pressed={amountCents === cents && !customOpen && !optOut}
-              className={`px-1 py-1 transition-colors ${
+              className={`flex-1 rounded-[6px] border py-1.5 transition-colors ${
                 amountCents === cents && !customOpen && !optOut
-                  ? 'border-b border-[#211c16] font-medium text-[#211c16]'
-                  : 'text-[#211c16]/58 hover:text-[#211c16]/82'
+                  ? 'border-[#211c16]/78 bg-[#211c16] font-medium text-[#f2ebdd]'
+                  : 'border-[#211c16]/18 text-[#211c16]/68 hover:border-[#211c16]/34 hover:bg-[#211c16]/[0.035] hover:text-[#211c16]'
               }`}
             >
               ${cents / 100}
@@ -167,10 +167,10 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
               setAmountCents(null)
             }}
             aria-pressed={customOpen && !optOut}
-            className={`px-1 py-1 transition-colors ${
+            className={`flex-1 rounded-[6px] border py-1.5 transition-colors ${
               customOpen && !optOut
-                ? 'border-b border-[#211c16] font-medium text-[#211c16]'
-                : 'text-[#211c16]/58 hover:text-[#211c16]/82'
+                ? 'border-[#211c16]/78 bg-[#211c16] font-medium text-[#f2ebdd]'
+                : 'border-[#211c16]/18 text-[#211c16]/68 hover:border-[#211c16]/34 hover:bg-[#211c16]/[0.035] hover:text-[#211c16]'
             }`}
           >
             Other
@@ -196,12 +196,13 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
         type="button"
         onClick={() => setOptOut((current) => !current)}
         aria-pressed={optOut}
-        className={`w-fit border-b py-0.5 text-left text-xs transition-colors ${
+        className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-left text-xs transition-colors ${
           optOut
-            ? 'border-[#211c16]/42 text-[#211c16]/72'
-            : 'border-transparent text-[#211c16]/50 hover:border-[#211c16]/20 hover:text-[#211c16]/68'
+            ? 'border-[#211c16]/45 bg-[#211c16]/[0.08] text-[#211c16]/82'
+            : 'border-[#211c16]/12 text-[#211c16]/58 hover:border-[#211c16]/28 hover:text-[#211c16]/76'
         }`}
       >
+        <span className={`h-2 w-2 rounded-full ${optOut ? 'bg-[#211c16]/70' : 'bg-[#211c16]/18'}`} />
         Leave only the card
       </button>
 
@@ -219,8 +220,8 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
         type="button"
         disabled={busy || (!canPlacePaid && !canPlaceUnpaid)}
         onClick={place}
-        className="w-full rounded-[8px] border border-[#211c16]/24 bg-[#211c16]/[0.92] py-2.5 font-display text-sm text-[#f2ebdd]
-                   shadow-[0_5px_12px_rgba(0,0,0,0.18)] transition-opacity
+        className="w-full rounded-[9px] border border-[#211c16] bg-[#211c16] py-3 font-display text-base text-[#f2ebdd]
+                   shadow-[0_8px_18px_rgba(0,0,0,0.22)] transition-opacity
                    disabled:border-[#211c16]/8 disabled:bg-[#211c16]/10 disabled:text-[#211c16]/38 disabled:shadow-none"
       >
         {busy
