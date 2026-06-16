@@ -87,7 +87,7 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="w-full bg-transparent border-0 border-b border-[#211c16]/15 rounded-none px-0 pb-2
-                     font-display text-xl text-[#211c16] placeholder:text-[#211c16]/38 focus:outline-none focus:border-[#211c16]/40"
+                     font-display text-xl text-[#211c16] placeholder:text-[#211c16]/50 focus:outline-none focus:border-[#211c16]/40"
         />
       </label>
 
@@ -99,7 +99,7 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
           placeholder="Your note"
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          className="w-full bg-transparent px-0 py-0.5 text-[14px] text-[#211c16]/85 placeholder:text-[#211c16]/38 resize-none focus:outline-none leading-6"
+          className="w-full bg-transparent px-0 py-0.5 text-[14px] text-[#211c16]/85 placeholder:text-[#211c16]/50 resize-none focus:outline-none leading-6"
           style={{
             backgroundImage:
               'repeating-linear-gradient(to bottom, transparent 0, transparent 23px, rgba(33,28,22,0.12) 23px, rgba(33,28,22,0.12) 24px)',
@@ -145,6 +145,12 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
 
       {/* Amount */}
       <div className="space-y-2.5">
+        <div>
+          <span className="block text-[11px] font-medium text-[#211c16]/62">Amount</span>
+          <p className="mt-0.5 text-[11px] leading-snug text-[#211c16]/55">
+            If this moved you, an amount can travel with your card.
+          </p>
+        </div>
         <div className="flex gap-1.5">
           {PRESETS.map((cents) => (
             <button

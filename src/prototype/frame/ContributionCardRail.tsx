@@ -32,19 +32,22 @@ function stableNumber(seed: string): number {
 function pilePositionFor(id: string, index: number, count: number, tile: number): PilePosition {
   const n = stableNumber(id)
   const signed = ((n % 2001) - 1000) / 1000
-  const centerWeighted = Math.sign(signed) * Math.pow(Math.abs(signed), 1.75)
+  // Higher exponent = more cards cluster toward center, edges calmer
+  const centerWeighted = Math.sign(signed) * Math.pow(Math.abs(signed), 2.1)
   const compact = tile < 84
   const maxSpread = compact ? 300 : 520
   const densitySpread = tile * (2.4 + Math.min(count, 16) * 0.14)
   const spread = Math.min(maxSpread, densitySpread)
   const layer = Math.floor(index / 7)
-  const lowerStraggle = n % 11 === 0 ? Math.round(tile * 0.34) : 0
+  // Reduced straggle so fewer cards climb high into the image
+  const lowerStraggle = n % 11 === 0 ? Math.round(tile * 0.22) : 0
 
   return {
     rotateDeg: ((Math.floor(n / 37) % 101) - 50) / 15, // about -3.3deg to +3.3deg
     x: Math.round(centerWeighted * (spread / 2) + ((Math.floor(n / 97) % 23) - 11)),
     y: Math.round(
-      tile * 0.08 +
+      // Raised base offset so the highest cards sit slightly lower in the image
+      tile * 0.14 +
         (Math.floor(n / 211) % Math.round(tile * 0.72)) +
         Math.min(layer * 4, tile * 0.46) +
         lowerStraggle,

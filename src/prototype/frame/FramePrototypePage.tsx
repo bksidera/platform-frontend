@@ -29,15 +29,15 @@ function WaitingCard({ onOpen }: { onOpen: () => void }) {
       aria-label="Leave a card"
       className="group mx-auto flex h-[82px] w-[82px] flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[7px]
                  border border-[#d8ceb9]/65 p-2
-                 shadow-[0_2px_5px_rgba(0,0,0,0.2),0_10px_24px_-12px_rgba(0,0,0,0.68)]
+                 shadow-[0_2px_6px_rgba(0,0,0,0.26),0_12px_28px_-10px_rgba(0,0,0,0.78)]
                  transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-parchment/70"
       style={{
         background:
           'linear-gradient(145deg, rgba(243,236,222,0.98), rgba(230,221,203,0.96) 58%, rgba(219,208,187,0.95))',
       }}
     >
-      <span className="font-display text-[11px] leading-tight text-[#211c16]/70">Leave a card</span>
-      <span className="text-lg leading-none text-[#211c16]/30 transition-opacity group-hover:text-[#211c16]/55">+</span>
+      <span className="font-display text-[11px] leading-tight text-[#211c16]/82">Leave a card</span>
+      <span className="text-xl leading-none text-[#211c16]/48 transition-opacity group-hover:text-[#211c16]/70">+</span>
     </motion.button>
   )
 }
@@ -143,7 +143,7 @@ export function FramePrototypePage() {
           </div>
         </div>
 
-        <div className="w-full max-w-[21rem] mt-5 md:mt-7">
+        <div className="w-full max-w-[21rem] mt-1 md:mt-2">
           <AnimatePresence initial={false} mode="wait">
             {!composerOpen ? (
               <WaitingCard
