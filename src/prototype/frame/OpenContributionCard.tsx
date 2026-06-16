@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type FocusEvent } from 'react'
 import { motion } from 'framer-motion'
 
 /**
@@ -32,6 +32,96 @@ const cardStyle = {
     '0 1px 0 rgba(255,255,255,0.65) inset, 0 22px 48px rgba(0,0,0,0.34), 0 7px 20px rgba(0,0,0,0.26)',
 }
 
+function isMobileViewport() {
+  return window.matchMedia('(max-width: 767px)').matches
+}
+
+function useMobileKeyboardAwareComposer() {
+  const scrollTimeouts = useRef<number[]>([])
+  const [keyboardBottomSpace, setKeyboardBottomSpace] = useState(0)
+
+  const clearScrollTimeouts = useCallback(() => {
+    scrollTimeouts.current.forEach((timeout) => window.clearTimeout(timeout))
+    scrollTimeouts.current = []
+  }, [])
+
+  const updateKeyboardSpace = useCallback(() => {
+    if (!isMobileViewport()) {
+      setKeyboardBottomSpace(0)
+      return
+    }
+
+    const viewport = window.visualViewport
+    if (!viewport) return
+
+    const reducedBy = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
+    const keyboardOpen = viewport.height < window.innerHeight * 0.8
+    setKeyboardBottomSpace(keyboardOpen ? Math.min(340, Math.max(120, Math.round(reducedBy + 36))) : 0)
+  }, [])
+
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return () => clearScrollTimeouts()
+
+    viewport.addEventListener('resize', updateKeyboardSpace)
+    viewport.addEventListener('scroll', updateKeyboardSpace)
+    window.addEventListener('resize', updateKeyboardSpace)
+    updateKeyboardSpace()
+
+    return () => {
+      viewport.removeEventListener('resize', updateKeyboardSpace)
+      viewport.removeEventListener('scroll', updateKeyboardSpace)
+      window.removeEventListener('resize', updateKeyboardSpace)
+      clearScrollTimeouts()
+    }
+  }, [clearScrollTimeouts, updateKeyboardSpace])
+
+  const scrollFocusedFieldIntoView = useCallback(
+    (event: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      if (!isMobileViewport()) return
+
+      if (!window.visualViewport) setKeyboardBottomSpace(180)
+
+      clearScrollTimeouts()
+      const target = event.currentTarget
+      const scrollTarget = target.closest('[data-composer-section]') ?? target
+      const delays = [320, 680]
+
+      scrollTimeouts.current = delays.map((delay) =>
+        window.setTimeout(() => {
+          scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          updateKeyboardSpace()
+        }, delay),
+      )
+    },
+    [clearScrollTimeouts, updateKeyboardSpace],
+  )
+
+  const clearFallbackKeyboardSpace = useCallback(() => {
+    if (window.visualViewport) return
+
+    window.setTimeout(() => {
+      const active = document.activeElement
+      if (!(active instanceof HTMLElement) || !active.matches('input, textarea')) {
+        setKeyboardBottomSpace(0)
+      }
+    }, 120)
+  }, [])
+
+  const blurActiveTextField = useCallback(() => {
+    const active = document.activeElement
+    if (!(active instanceof HTMLElement)) return
+    if (active.matches('input, textarea')) active.blur()
+  }, [])
+
+  return {
+    keyboardBottomSpace,
+    scrollFocusedFieldIntoView,
+    clearFallbackKeyboardSpace,
+    blurActiveTextField,
+  }
+}
+
 export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Props) {
   const [name, setName] = useState('')
   const [note, setNote] = useState('')
@@ -46,8 +136,16 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
   const hasCardContent = note.trim().length > 0 || !!imageUrl
   const canPlace = amountSelected || (justCard && hasCardContent)
   const needsCardContent = justCard && !hasCardContent
+  const {
+    keyboardBottomSpace,
+    scrollFocusedFieldIntoView,
+    clearFallbackKeyboardSpace,
+    blurActiveTextField,
+  } =
+    useMobileKeyboardAwareComposer()
 
   const place = () => {
+    blurActiveTextField()
     if (!canPlace) return
     onPlace({
       displayName: name.trim() || 'A card was left',
@@ -58,6 +156,7 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
   }
 
   const selectAmount = (cents: number) => {
+    blurActiveTextField()
     setJustCard(false)
     setAmountCents(cents)
     setCustomOpen(false)
@@ -65,12 +164,14 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
   }
 
   const openCustom = () => {
+    blurActiveTextField()
     setJustCard(false)
     setCustomOpen(true)
     setAmountCents(null)
   }
 
   const selectJustCard = () => {
+    blurActiveTextField()
     setJustCard(true)
     setCustomOpen(false)
   }
@@ -79,7 +180,10 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
     <motion.div
       layout
       className="w-full rounded-[12px] border border-[#d5c7ad]/80 px-5 pt-5 pb-5 text-[#211c16]"
-      style={cardStyle}
+      style={{
+        ...cardStyle,
+        marginBottom: keyboardBottomSpace ? `${keyboardBottomSpace}px` : undefined,
+      }}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
@@ -94,7 +198,7 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
       </div>
 
       {/* Name */}
-      <label className="block mb-4">
+      <label className="block mb-4" data-composer-section>
         <span className="mb-1.5 block text-[11px] font-medium text-[#211c16]/58">Your name</span>
         <input
           autoFocus
@@ -102,6 +206,8 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
           placeholder="Alex"
           maxLength={NAME_LIMIT}
           value={name}
+          onFocus={scrollFocusedFieldIntoView}
+          onBlur={clearFallbackKeyboardSpace}
           onChange={(e) => setName(e.target.value.slice(0, NAME_LIMIT))}
           className="w-full bg-transparent border-0 border-b border-[#211c16]/15 rounded-none px-0 pb-2
                      font-display text-xl text-[#211c16] placeholder:text-[#211c16]/50 focus:outline-none focus:border-[#211c16]/40"
@@ -109,7 +215,7 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
       </label>
 
       {/* Note */}
-      <label className="block mb-4">
+      <label className="block mb-4" data-composer-section>
         <span className="mb-1.5 block text-[11px] font-medium text-[#211c16]/58">Your card</span>
         <textarea
           maxLength={NOTE_LIMIT}
@@ -117,6 +223,8 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
           aria-label="Your card"
           placeholder="What stayed with you?"
           value={note}
+          onFocus={scrollFocusedFieldIntoView}
+          onBlur={clearFallbackKeyboardSpace}
           onChange={(e) => setNote(e.target.value.slice(0, NOTE_LIMIT))}
           className="w-full bg-transparent px-0 py-0.5 text-[14px] text-[#211c16]/85 placeholder:text-[#211c16]/50 resize-none focus:outline-none leading-6"
           style={{
@@ -139,6 +247,7 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
             <button
               type="button"
               aria-label="Remove photo"
+              onPointerDown={blurActiveTextField}
               onClick={() => setImageUrl(null)}
               className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-[#211c16] border border-[#f2ebdd]/70 text-[#f2ebdd] text-[10px] leading-none"
             >
@@ -146,7 +255,10 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
             </button>
           </div>
         ) : (
-          <label className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 text-sm text-[#211c16]/52 hover:text-[#211c16]/72 transition-colors">
+          <label
+            className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 text-sm text-[#211c16]/52 hover:text-[#211c16]/72 transition-colors"
+            onPointerDown={blurActiveTextField}
+          >
             <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#211c16]/14 text-base leading-none">
               +
             </span>
@@ -183,6 +295,7 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
             <button
               key={cents}
               type="button"
+              onPointerDown={blurActiveTextField}
               onClick={() => selectAmount(cents)}
               aria-pressed={amountCents === cents && !customOpen && !justCard}
               className={`min-h-11 flex-1 rounded-[6px] border py-2 text-sm transition-colors ${
@@ -196,6 +309,7 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
           ))}
           <button
             type="button"
+            onPointerDown={blurActiveTextField}
             onClick={openCustom}
             aria-pressed={customOpen && !justCard}
             className={`min-h-11 flex-1 rounded-[6px] border py-2 text-sm transition-colors ${
@@ -214,6 +328,8 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
             inputMode="decimal"
             placeholder="Amount in dollars"
             value={custom}
+            onFocus={scrollFocusedFieldIntoView}
+            onBlur={clearFallbackKeyboardSpace}
             onChange={(e) => {
               setCustom(e.target.value)
               const d = parseFloat(e.target.value)
@@ -225,6 +341,7 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
 
         <button
           type="button"
+          onPointerDown={blurActiveTextField}
           onClick={selectJustCard}
           aria-pressed={justCard}
           className={`inline-flex min-h-11 w-full items-center gap-2 rounded-[6px] border px-3 py-2 text-left text-sm transition-colors ${
@@ -249,6 +366,7 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
       <button
         type="button"
         disabled={busy || !canPlace}
+        onPointerDown={blurActiveTextField}
         onClick={place}
         className="mt-5 w-full rounded-[9px] border border-[#211c16] bg-[#211c16] py-3 font-display text-base text-[#f2ebdd]
                    shadow-[0_8px_18px_rgba(0,0,0,0.18)] transition-opacity
