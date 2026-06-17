@@ -6,16 +6,15 @@ import type { Contribution } from './types'
  * depending on who is looking:
  *
  *   no-amount card → none, for everyone
- *   paid card      → public: glyph · giver(own): amount · giver(other): glyph · creator: amount
+ *   paid card      → public: none · giver(own): amount · giver(other): none · creator: amount
  *
- * Public viewers never see a dollar figure (no leaderboard, no comparison),
- * and a no-amount card never carries a "no payment" marker — it simply omits.
+ * Public viewers never see a dollar figure or a payment marker. A no-amount
+ * card never carries a "no payment" marker; it simply omits.
  */
 
 export type ViewerRole = 'public' | 'giver' | 'creator'
 
 export type AmountDisplay =
-  | { kind: 'glyph' }
   | { kind: 'amount'; text: string }
   | { kind: 'none' }
 
@@ -28,5 +27,5 @@ export function amountDisplay(
   const text = `$${Math.round(contribution.supportAmountCents / 100)}`
   if (viewerRole === 'creator') return { kind: 'amount', text }
   if (viewerRole === 'giver' && isOwn) return { kind: 'amount', text }
-  return { kind: 'glyph' }
+  return { kind: 'none' }
 }

@@ -1,6 +1,5 @@
 import type { Contribution } from './types'
 import { amountDisplay, type ViewerRole } from './viewer'
-import { PaymentGlyph } from './PaymentGlyph'
 
 /**
  * The readable version of a card. Stack viewer and legacy detail surfaces share
@@ -19,7 +18,7 @@ export function ReadableContributionCard({
   isOwn: boolean
   surface?: 'paper' | 'dark'
 }) {
-  const name = contribution.visibility === 'private' ? 'Private card' : contribution.displayName
+  const name = contribution.displayName
   const mark = amountDisplay(contribution, viewerRole, isOwn)
   const paper = surface === 'paper'
   const privateAmountText =
@@ -33,11 +32,6 @@ export function ReadableContributionCard({
     <div className={paper ? 'space-y-4 text-[#2a251e]' : 'space-y-3.5'}>
       <div className="flex items-start justify-between gap-4">
         <p className={`font-display text-xl leading-tight ${paper ? 'text-[#211c16]' : 'text-parchment/95'}`}>{name}</p>
-        {mark.kind === 'glyph' && (
-          <span className="pt-1.5" role="img" aria-label="Amount attached">
-            <PaymentGlyph tone={paper ? 'green' : 'parchment'} size={paper ? 12 : 11} />
-          </span>
-        )}
         {mark.kind === 'amount' && (
           <span className={`pt-1 text-sm font-medium ${paper ? 'text-[#2a251e]/60' : 'text-parchment/55'}`}>
             {privateAmountText}
@@ -69,7 +63,9 @@ export function ReadableContributionCard({
           <img
             src={contribution.imageUrl}
             alt=""
-            className={`w-full aspect-[4/3] object-cover ${paper ? 'rounded-[4px]' : 'rounded-[6px] ring-1 ring-white/10'}`}
+            className={`w-full aspect-[4/3] object-cover opacity-95 saturate-[0.8] contrast-[0.94] sepia-[0.08] ${
+              paper ? 'rounded-[4px]' : 'rounded-[6px] ring-1 ring-white/10'
+            }`}
             draggable={false}
           />
         </div>

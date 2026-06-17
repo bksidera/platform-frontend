@@ -1,8 +1,7 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import type { MouseEvent } from 'react'
 import type { Contribution } from './types'
-import { amountDisplay, type ViewerRole } from './viewer'
-import { PaymentGlyph } from './PaymentGlyph'
+import type { ViewerRole } from './viewer'
 import { SupportArtifact } from './SupportArtifact'
 
 interface Props {
@@ -206,19 +205,13 @@ function buildBasinItems(cards: Contribution[], tile: number, width: number, hea
 
 function BasinTile({
   item,
-  viewerRole,
-  isOwn,
   onClick,
 }: {
   item: BasinItem
-  viewerRole: ViewerRole
-  isOwn: boolean
   onClick: (event: MouseEvent<HTMLButtonElement>) => void
 }) {
   const { card, size, kind } = item
-  const mark = amountDisplay(card, viewerRole, isOwn)
-  const privateCard = card.visibility === 'private'
-  const name = privateCard ? 'Private' : firstName(card.displayName)
+  const name = firstName(card.displayName)
   const hasPhoto = kind === 'photo' && !!card.imageUrl
   const isSliver = kind === 'sliver'
   const isBack = kind === 'back'
@@ -227,7 +220,7 @@ function BasinTile({
     <button
       type="button"
       onClick={onClick}
-      aria-label={privateCard ? 'Private card' : `Card from ${card.displayName}`}
+      aria-label={`Card from ${card.displayName}`}
       className="pointer-events-auto relative overflow-hidden rounded-[5px] border border-[#d4c8b2]/55 bg-[#eee6d7] text-left text-[#2a251e]
                  shadow-[0_1px_0_rgba(255,255,255,0.52)_inset,0_2px_5px_rgba(0,0,0,0.18),0_10px_20px_-12px_rgba(0,0,0,0.75)]
                  transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-parchment/70"
@@ -240,7 +233,12 @@ function BasinTile({
     >
       {hasPhoto ? (
         <span className="block h-full w-full p-[3px]">
-          <img src={card.imageUrl} alt="" className="h-full w-full rounded-[2px] object-cover" draggable={false} />
+          <img
+            src={card.imageUrl}
+            alt=""
+            className="h-full w-full rounded-[2px] object-cover opacity-95 saturate-[0.78] contrast-[0.94] sepia-[0.08]"
+            draggable={false}
+          />
         </span>
       ) : isBack || isSliver ? (
         <span className="flex h-full flex-col justify-between px-1.5 py-1.5">
@@ -251,31 +249,11 @@ function BasinTile({
       ) : (
         <span className="flex h-full flex-col justify-between px-1.5 py-1.5">
           <span className="flex items-start justify-between gap-1">
-            <span className="max-w-[70%] truncate font-display text-[10px] leading-none text-[#2a251e]/70">
+            <span className="max-w-[82%] truncate font-display text-[10px] leading-none text-[#2a251e]/72">
               {name}
             </span>
-            {mark.kind !== 'none' && (
-              <span role="img" aria-label="Amount attached" className="pt-[1px]">
-                {mark.kind === 'glyph' ? (
-                  <PaymentGlyph tone="green" size={7} />
-                ) : (
-                  <span className="text-[8px] font-medium leading-none text-[#2a251e]/52">{mark.text}</span>
-                )}
-              </span>
-            )}
           </span>
           <span className="block h-px w-3/4 bg-[#2a251e]/10" />
-        </span>
-      )}
-      {hasPhoto && mark.kind !== 'none' && (
-        <span className="absolute right-1.5 top-1.5" role="img" aria-label="Amount attached">
-          {mark.kind === 'glyph' ? (
-            <PaymentGlyph tone="green" size={7} />
-          ) : (
-            <span className="rounded-full bg-[#f7f0e1]/85 px-1 py-0.5 text-[8px] font-medium leading-none text-[#2a251e]/62">
-              {mark.text}
-            </span>
-          )}
         </span>
       )}
     </button>
@@ -396,8 +374,6 @@ export function ContributionCardRail({
                 ) : (
                   <BasinTile
                     item={item}
-                    viewerRole={viewerRole}
-                    isOwn={ownCard}
                     onClick={(event) => onOpen(item.card, event.currentTarget)}
                   />
                 )}

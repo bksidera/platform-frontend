@@ -9,7 +9,7 @@ import { motion } from 'framer-motion'
 
 const PRESETS = [500, 1000, 2500]
 const NAME_LIMIT = 24
-const NOTE_LIMIT = 120
+const NOTE_LIMIT = 140
 
 export interface CardDraft {
   displayName: string
@@ -19,7 +19,6 @@ export interface CardDraft {
 }
 
 interface Props {
-  creatorFirst: string
   busy: boolean
   error: string | null
   onPlace: (draft: CardDraft) => void
@@ -122,20 +121,20 @@ function useMobileKeyboardAwareComposer() {
   }
 }
 
-export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Props) {
+export function OpenContributionCard({ busy, error, onPlace }: Props) {
   const [name, setName] = useState('')
   const [note, setNote] = useState('')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
-  const [amountCents, setAmountCents] = useState<number | null>(1000)
+  const [amountCents, setAmountCents] = useState<number | null>(null)
   const [customOpen, setCustomOpen] = useState(false)
   const [custom, setCustom] = useState('')
   const [justCard, setJustCard] = useState(false)
 
-  const dollars = amountCents ? Math.round(amountCents / 100) : null
   const amountSelected = !justCard && !!amountCents && amountCents >= 100
-  const hasCardContent = note.trim().length > 0 || !!imageUrl
-  const canPlace = amountSelected || (justCard && hasCardContent)
-  const needsCardContent = justCard && !hasCardContent
+  const hasDisplayName = name.trim().length > 0
+  const hasCompletionChoice = amountSelected || justCard
+  const canPlace = hasDisplayName && hasCompletionChoice
+  const needsName = hasCompletionChoice && !hasDisplayName
   const {
     keyboardBottomSpace,
     scrollFocusedFieldIntoView,
@@ -148,7 +147,7 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
     blurActiveTextField()
     if (!canPlace) return
     onPlace({
-      displayName: name.trim() || 'A card was left',
+      displayName: name.trim(),
       note: note.trim(),
       imageUrl,
       amountCents: justCard ? null : amountCents,
@@ -186,40 +185,17 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <p className="font-display text-xl leading-none text-[#211c16]">Leave a card for {creatorFirst}</p>
-        {amountSelected && (
-          <span
-            className="h-2.5 w-2.5 rounded-full bg-[#3a7554] shadow-[0_1px_0_rgba(255,255,255,0.45)_inset]"
-            aria-label="Amount attached"
-            role="img"
-          />
-        )}
+      <div className="mb-5">
+        <p className="font-display text-xl leading-none text-[#211c16]">Leave a card</p>
       </div>
-
-      {/* Name */}
-      <label className="block mb-4" data-composer-section>
-        <span className="mb-1.5 block text-[11px] font-medium text-[#211c16]/58">Your name</span>
-        <input
-          autoFocus
-          aria-label="Your name"
-          placeholder="Alex"
-          maxLength={NAME_LIMIT}
-          value={name}
-          onFocus={scrollFocusedFieldIntoView}
-          onBlur={clearFallbackKeyboardSpace}
-          onChange={(e) => setName(e.target.value.slice(0, NAME_LIMIT))}
-          className="w-full bg-transparent border-0 border-b border-[#211c16]/15 rounded-none px-0 pb-2
-                     font-display text-xl text-[#211c16] placeholder:text-[#211c16]/50 focus:outline-none focus:border-[#211c16]/40"
-        />
-      </label>
 
       {/* Note */}
       <label className="block mb-4" data-composer-section>
         <span className="mb-1.5 block text-[11px] font-medium text-[#211c16]/58">Your card</span>
         <textarea
+          autoFocus
           maxLength={NOTE_LIMIT}
-          rows={3}
+          rows={4}
           aria-label="Your card"
           placeholder="What stayed with you?"
           value={note}
@@ -232,11 +208,27 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
               'repeating-linear-gradient(to bottom, transparent 0, transparent 23px, rgba(33,28,22,0.12) 23px, rgba(33,28,22,0.12) 24px)',
           }}
         />
-        {note.length >= 90 && (
+        {note.length >= 120 && (
           <span className="mt-1 block text-right text-[10px] text-[#211c16]/38">
             {note.length}/{NOTE_LIMIT}
           </span>
         )}
+      </label>
+
+      {/* Name */}
+      <label className="block mb-4" data-composer-section>
+        <span className="mb-1.5 block text-[11px] font-medium text-[#211c16]/58">Your name</span>
+        <input
+          aria-label="Your name"
+          placeholder="Alex"
+          maxLength={NAME_LIMIT}
+          value={name}
+          onFocus={scrollFocusedFieldIntoView}
+          onBlur={clearFallbackKeyboardSpace}
+          onChange={(e) => setName(e.target.value.slice(0, NAME_LIMIT))}
+          className="w-full bg-transparent border-0 border-b border-[#211c16]/15 rounded-none px-0 pb-2
+                     font-display text-xl text-[#211c16] placeholder:text-[#211c16]/50 focus:outline-none focus:border-[#211c16]/40"
+        />
       </label>
 
       {/* Photo */}
@@ -287,10 +279,10 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
         <div>
           <span className="block text-[11px] font-medium text-[#211c16]/68">Amount</span>
           <p className="mt-0.5 text-[11px] leading-snug text-[#211c16]/55">
-            Optional. Only {creatorFirst} sees the amount.
+            Optional. Only the creator sees the amount.
           </p>
         </div>
-        <div className="flex gap-1.5">
+        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
           {PRESETS.map((cents) => (
             <button
               key={cents}
@@ -320,6 +312,19 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
           >
             Other
           </button>
+          <button
+            type="button"
+            onPointerDown={blurActiveTextField}
+            onClick={selectJustCard}
+            aria-pressed={justCard}
+            className={`min-h-11 rounded-[6px] border px-2 py-2 text-sm transition-colors ${
+              justCard
+                ? 'border-[#211c16]/70 bg-[#211c16] font-medium text-[#f2ebdd]'
+                : 'border-[#211c16]/16 text-[#211c16]/58 hover:border-[#211c16]/30 hover:text-[#211c16]/85'
+            }`}
+          >
+            Just the card
+          </button>
         </div>
 
         {customOpen && !justCard && (
@@ -339,24 +344,9 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
           />
         )}
 
-        <button
-          type="button"
-          onPointerDown={blurActiveTextField}
-          onClick={selectJustCard}
-          aria-pressed={justCard}
-          className={`inline-flex min-h-11 w-full items-center gap-2 rounded-[6px] border px-3 py-2 text-left text-sm transition-colors ${
-            justCard
-              ? 'border-[#211c16]/55 bg-[#211c16]/[0.08] text-[#211c16]/86'
-              : 'border-[#211c16]/16 text-[#211c16]/62 hover:border-[#211c16]/30 hover:text-[#211c16]/82'
-          }`}
-        >
-          <span className={`h-2 w-2 rounded-full ${justCard ? 'bg-[#211c16]/70' : 'bg-[#211c16]/18'}`} />
-          Just the card
-        </button>
-
-        {needsCardContent && (
+        {needsName && (
           <p className="text-[11px] leading-snug text-[#211c16]/50">
-            Add a note, photo, or amount to leave a card.
+            Add your name to place the card.
           </p>
         )}
       </div>
@@ -372,13 +362,8 @@ export function OpenContributionCard({ creatorFirst, busy, error, onPlace }: Pro
                    shadow-[0_8px_18px_rgba(0,0,0,0.18)] transition-opacity
                    disabled:border-[#211c16]/8 disabled:bg-[#211c16]/8 disabled:text-[#211c16]/32 disabled:shadow-none"
       >
-        {busy
-          ? 'Leaving card…'
-          : `Leave card for ${creatorFirst}`}
+        {busy ? 'Placing card…' : 'Place card'}
       </button>
-      {amountSelected && dollars && !busy && (
-        <p className="mt-2 text-center text-[11px] text-[#211c16]/50">Amount: ${dollars}</p>
-      )}
     </motion.div>
   )
 }

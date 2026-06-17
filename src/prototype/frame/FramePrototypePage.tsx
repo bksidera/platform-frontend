@@ -122,7 +122,6 @@ export function FramePrototypePage() {
           </p>
           <p className="mt-3 font-display text-base text-parchment/82">
             Cards left with {CREATOR.name.split(' ')[0]}
-            {cards.length > 0 && <span className="font-body text-[11px] text-parchment/38"> · {cards.length}</span>}
           </p>
         </header>
 
@@ -161,7 +160,6 @@ export function FramePrototypePage() {
               >
                 <OpenContributionCard
                   key={cardKey}
-                  creatorFirst={CREATOR.name.split(' ')[0] ?? CREATOR.name}
                   busy={busy}
                   error={error}
                   onPlace={(d) => void place(d)}
@@ -203,7 +201,7 @@ export function FramePrototypePage() {
               className="pointer-events-auto bg-ink/95 border border-line rounded-[8px] px-6 py-3.5 text-center"
             >
               <p className="font-display text-base text-parchment/95">
-                Your card was left with {CREATOR.name.split(' ')[0]}.
+                You placed your card.
               </p>
             </button>
           </motion.div>

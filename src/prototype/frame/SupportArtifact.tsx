@@ -1,8 +1,7 @@
 import type { MouseEvent } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import type { Contribution } from './types'
-import { amountDisplay, type ViewerRole } from './viewer'
-import { PaymentGlyph } from './PaymentGlyph'
+import type { ViewerRole } from './viewer'
 
 /**
  * The placed card thumbnail (spec §2.1, §4–7): a hard square, warm paper, a
@@ -40,17 +39,13 @@ const SHELL =
 export function SupportArtifact({
   contribution,
   size,
-  viewerRole = 'public',
-  isOwn = false,
   appear,
   onClick,
 }: Props) {
   const reducedMotion = useReducedMotion()
-  const isPrivate = contribution.visibility === 'private'
-  const name = isPrivate ? 'Private' : firstName(contribution.displayName)
+  const name = firstName(contribution.displayName)
   const hasPhoto = !!contribution.imageUrl
   const hasNote = !!contribution.note
-  const mark = amountDisplay(contribution, viewerRole, isOwn)
 
   const showNoteUnderPhoto = hasPhoto && hasNote && size >= 88
   const isMinimal = !hasPhoto && !hasNote
@@ -60,7 +55,7 @@ export function SupportArtifact({
     <motion.button
       type="button"
       onClick={onClick}
-      aria-label={isPrivate ? 'Private card' : `Card from ${contribution.displayName}`}
+      aria-label={`Card from ${contribution.displayName}`}
       initial={appear && !reducedMotion ? { opacity: 0, scale: 1.2 } : false}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
@@ -76,26 +71,13 @@ export function SupportArtifact({
     >
       <div className="flex shrink-0 items-center justify-between gap-1.5">
         <span
-          className={`min-w-0 truncate font-display leading-none text-[#2a251e] ${
+          className={`min-w-0 truncate font-display leading-none text-[#2a251e]/82 ${
             isMinimal ? 'max-w-[82%]' : ''
           }`}
           style={{ fontSize: Math.max(9.5, Math.round(size * (isMinimal ? 0.14 : 0.125))) }}
         >
           {name}
         </span>
-        {mark.kind === 'glyph' && (
-          <span role="img" aria-label="Amount attached">
-            <PaymentGlyph tone="green" size={Math.round(size * 0.1)} />
-          </span>
-        )}
-        {mark.kind === 'amount' && (
-          <span
-            className="shrink-0 font-medium leading-none text-[#2a251e]/55"
-            style={{ fontSize: Math.max(8, Math.round(size * 0.1)) }}
-          >
-            {mark.text}
-          </span>
-        )}
       </div>
 
       {hasPhoto ? (
@@ -110,7 +92,7 @@ export function SupportArtifact({
             <img
               src={contribution.imageUrl}
               alt=""
-              className="h-full w-full rounded-[2px] object-cover"
+              className="h-full w-full rounded-[2px] object-cover opacity-95 saturate-[0.78] contrast-[0.94] sepia-[0.08]"
               draggable={false}
             />
           </span>
@@ -144,7 +126,7 @@ export function SupportArtifact({
             className="font-display tracking-wide text-[#2a251e]/20"
             style={{ fontSize: Math.round(size * 0.3) }}
           >
-            {isPrivate ? '·' : initials(contribution.displayName)}
+            {initials(contribution.displayName)}
           </span>
         </div>
       )}
