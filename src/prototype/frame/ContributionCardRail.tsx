@@ -19,15 +19,96 @@ interface Props {
 
 type BasinItem = {
   card: Contribution
-  kind: 'mini' | 'tile' | 'photo' | 'sliver'
+  kind: 'mini' | 'tile' | 'photo' | 'back' | 'sliver'
   size: number
   x: number
   y: number
   rotate: number
+  opacity: number
   z: number
 }
 
 const BASE_LAYOUT_SEED = 'living-frame-foot-gather-v1'
+
+type SlotKind = BasinItem['kind'] | 'auto'
+
+type HeapSlot = {
+  x: number
+  y: number
+  rotate: number
+  scale: number
+  z: number
+  kind: SlotKind
+  opacity?: number
+}
+
+const FALLBACK_SLOT: HeapSlot = { x: 0, y: 54, rotate: 0, scale: 0.7, z: 1, kind: 'auto' }
+
+const INTIMATE_SLOTS: HeapSlot[] = [
+  { x: 0, y: 44, rotate: -2.1, scale: 0.92, z: 40, kind: 'mini' },
+  { x: -0.17, y: 50, rotate: 2.4, scale: 0.84, z: 35, kind: 'mini' },
+  { x: 0.17, y: 50, rotate: -1.4, scale: 0.84, z: 34, kind: 'mini' },
+  { x: -0.04, y: 63, rotate: 3.1, scale: 0.8, z: 38, kind: 'mini' },
+  { x: 0.05, y: 34, rotate: -3.2, scale: 0.76, z: 26, kind: 'auto', opacity: 0.96 },
+]
+
+const SMALL_HEAP_SLOTS: HeapSlot[] = [
+  { x: -0.34, y: 54, rotate: -4.2, scale: 0.5, z: 10, kind: 'back', opacity: 0.78 },
+  { x: -0.19, y: 42, rotate: 3.3, scale: 0.58, z: 12, kind: 'auto', opacity: 0.86 },
+  { x: 0.04, y: 36, rotate: -2.1, scale: 0.62, z: 14, kind: 'auto', opacity: 0.9 },
+  { x: 0.26, y: 47, rotate: 3.8, scale: 0.52, z: 13, kind: 'back', opacity: 0.82 },
+  { x: -0.28, y: 73, rotate: 2.5, scale: 0.68, z: 24, kind: 'auto' },
+  { x: -0.08, y: 68, rotate: -2.8, scale: 0.8, z: 35, kind: 'mini' },
+  { x: 0.15, y: 70, rotate: 2.1, scale: 0.78, z: 34, kind: 'mini' },
+  { x: 0.34, y: 76, rotate: -3.5, scale: 0.62, z: 22, kind: 'auto' },
+  { x: -0.19, y: 88, rotate: -1.3, scale: 0.55, z: 18, kind: 'sliver', opacity: 0.78 },
+  { x: 0.02, y: 89, rotate: 3.6, scale: 0.88, z: 45, kind: 'mini' },
+  { x: 0.22, y: 87, rotate: -2.3, scale: 0.54, z: 17, kind: 'sliver', opacity: 0.78 },
+  { x: -0.01, y: 55, rotate: 1.2, scale: 0.5, z: 9, kind: 'back', opacity: 0.7 },
+]
+
+const MEDIUM_HEAP_SLOTS: HeapSlot[] = [
+  { x: -0.4, y: 54, rotate: -4.8, scale: 0.44, z: 7, kind: 'back', opacity: 0.62 },
+  { x: -0.26, y: 39, rotate: 4.4, scale: 0.5, z: 8, kind: 'sliver', opacity: 0.7 },
+  { x: -0.12, y: 32, rotate: -2.8, scale: 0.5, z: 9, kind: 'auto', opacity: 0.76 },
+  { x: 0.1, y: 34, rotate: 2.6, scale: 0.5, z: 10, kind: 'back', opacity: 0.68 },
+  { x: 0.28, y: 44, rotate: -4.1, scale: 0.5, z: 11, kind: 'auto', opacity: 0.78 },
+  { x: 0.42, y: 59, rotate: 3.6, scale: 0.43, z: 7, kind: 'sliver', opacity: 0.62 },
+  { x: -0.34, y: 73, rotate: 2.5, scale: 0.56, z: 18, kind: 'auto' },
+  { x: -0.18, y: 66, rotate: -3.4, scale: 0.66, z: 26, kind: 'auto' },
+  { x: 0.02, y: 63, rotate: 1.8, scale: 0.78, z: 34, kind: 'mini' },
+  { x: 0.22, y: 69, rotate: -2.6, scale: 0.62, z: 24, kind: 'auto' },
+  { x: 0.37, y: 78, rotate: 4.2, scale: 0.52, z: 20, kind: 'sliver', opacity: 0.72 },
+  { x: -0.29, y: 91, rotate: -2.2, scale: 0.5, z: 16, kind: 'sliver', opacity: 0.64 },
+  { x: -0.11, y: 91, rotate: 2.4, scale: 0.78, z: 42, kind: 'mini' },
+  { x: 0.1, y: 92, rotate: -1.7, scale: 0.76, z: 43, kind: 'mini' },
+  { x: 0.28, y: 91, rotate: 3.1, scale: 0.48, z: 15, kind: 'back', opacity: 0.62 },
+]
+
+const DENSE_HEAP_SLOTS: HeapSlot[] = [
+  { x: -0.46, y: 53, rotate: -5.4, scale: 0.36, z: 2, kind: 'sliver', opacity: 0.55 },
+  { x: -0.36, y: 40, rotate: 4.6, scale: 0.42, z: 4, kind: 'back', opacity: 0.58 },
+  { x: -0.25, y: 31, rotate: -3.8, scale: 0.42, z: 5, kind: 'auto', opacity: 0.66 },
+  { x: -0.12, y: 27, rotate: 2.7, scale: 0.42, z: 6, kind: 'sliver', opacity: 0.62 },
+  { x: 0.02, y: 27, rotate: -1.9, scale: 0.44, z: 7, kind: 'back', opacity: 0.6 },
+  { x: 0.16, y: 31, rotate: 3.7, scale: 0.42, z: 8, kind: 'auto', opacity: 0.66 },
+  { x: 0.3, y: 39, rotate: -4.5, scale: 0.4, z: 5, kind: 'back', opacity: 0.58 },
+  { x: 0.43, y: 54, rotate: 5, scale: 0.36, z: 3, kind: 'sliver', opacity: 0.55 },
+  { x: -0.41, y: 71, rotate: 3.4, scale: 0.44, z: 13, kind: 'auto', opacity: 0.78 },
+  { x: -0.28, y: 62, rotate: -2.9, scale: 0.5, z: 17, kind: 'auto', opacity: 0.84 },
+  { x: -0.14, y: 57, rotate: 2.2, scale: 0.52, z: 18, kind: 'photo', opacity: 0.86 },
+  { x: 0, y: 55, rotate: -2.4, scale: 0.54, z: 19, kind: 'back', opacity: 0.8 },
+  { x: 0.15, y: 58, rotate: 2.8, scale: 0.52, z: 20, kind: 'auto', opacity: 0.86 },
+  { x: 0.29, y: 64, rotate: -3.4, scale: 0.48, z: 16, kind: 'auto', opacity: 0.82 },
+  { x: 0.41, y: 74, rotate: 3.8, scale: 0.4, z: 12, kind: 'sliver', opacity: 0.68 },
+  { x: -0.34, y: 92, rotate: -3.2, scale: 0.45, z: 14, kind: 'sliver', opacity: 0.7 },
+  { x: -0.2, y: 89, rotate: 2.5, scale: 0.64, z: 32, kind: 'auto' },
+  { x: -0.05, y: 86, rotate: -1.8, scale: 0.78, z: 45, kind: 'mini' },
+  { x: 0.12, y: 89, rotate: 2.2, scale: 0.74, z: 44, kind: 'mini' },
+  { x: 0.27, y: 92, rotate: -2.8, scale: 0.58, z: 30, kind: 'auto' },
+  { x: -0.11, y: 105, rotate: 3.1, scale: 0.68, z: 46, kind: 'mini' },
+  { x: 0.08, y: 106, rotate: -2.5, scale: 0.66, z: 43, kind: 'mini' },
+]
 
 function stableNumber(seed: string): number {
   let hash = 2166136261
@@ -43,69 +124,82 @@ function firstName(name: string): string {
   return name.trim().split(/\s+/)[0] ?? name
 }
 
-function visibleCards(cards: Contribution[]): Contribution[] {
-  if (cards.length <= 24) return cards
-
-  const newest = cards.slice(-20)
-  const earlier = cards
-    .slice(0, -20)
-    .filter((card) => stableNumber(`${BASE_LAYOUT_SEED}:sample:${card.id}`) % 4 === 0)
-    .slice(-6)
-
-  return [...earlier, ...newest]
+function getHeapPlan(count: number, tile: number) {
+  if (count <= 5) {
+    return { widthRatio: 0.44, height: Math.round(tile * 1.18), slots: INTIMATE_SLOTS.slice(0, count) }
+  }
+  if (count <= 12) {
+    return { widthRatio: 0.74, height: Math.round(tile * 1.5), slots: SMALL_HEAP_SLOTS.slice(0, count) }
+  }
+  if (count <= 40) {
+    return { widthRatio: 0.8, height: Math.round(tile * 1.58), slots: MEDIUM_HEAP_SLOTS }
+  }
+  return { widthRatio: 0.92, height: Math.round(tile * 1.72), slots: DENSE_HEAP_SLOTS }
 }
 
-function itemKind(card: Contribution, index: number, count: number): BasinItem['kind'] {
-  if (count <= 5) return 'mini'
-  if (card.imageUrl && index % 3 !== 0) return 'photo'
-  if (index >= count - 4 || index === 1 || index === Math.floor(count * 0.62)) return 'mini'
-  if (count > 18 && index % 4 === 0) return 'sliver'
+function visibleCards(cards: Contribution[], limit: number): Contribution[] {
+  if (cards.length <= limit) return cards
+
+  const selected = new Map<string, Contribution>()
+  const newestTarget = Math.max(0, limit - 4)
+  cards.slice(-newestTarget).forEach((card) => selected.set(card.id, card))
+
+  const photoCards = cards
+    .filter((card) => card.imageUrl && !selected.has(card.id))
+    .sort((a, b) => stableNumber(`${BASE_LAYOUT_SEED}:photo:${a.id}`) - stableNumber(`${BASE_LAYOUT_SEED}:photo:${b.id}`))
+
+  for (const card of photoCards) {
+    if (selected.size >= limit) break
+    selected.set(card.id, card)
+  }
+
+  const sampled = cards
+    .filter((card) => !selected.has(card.id))
+    .sort((a, b) => stableNumber(`${BASE_LAYOUT_SEED}:sample:${a.id}`) - stableNumber(`${BASE_LAYOUT_SEED}:sample:${b.id}`))
+
+  for (const card of sampled) {
+    if (selected.size >= limit) break
+    selected.set(card.id, card)
+  }
+
+  const selectedIds = new Set(selected.keys())
+  return cards.filter((card) => selectedIds.has(card.id))
+}
+
+function resolveKind(slotKind: SlotKind, card: Contribution, index: number): BasinItem['kind'] {
+  if (slotKind !== 'auto') return slotKind
+  if (card.imageUrl && index % 2 === 0) return 'photo'
   return 'tile'
 }
 
-function buildBasinItems(cards: Contribution[], tile: number, width: number, height: number): BasinItem[] {
-  const shown = visibleCards(cards)
-  const count = shown.length
-  const compact = tile < 84
+function buildBasinItems(cards: Contribution[], tile: number, width: number, heapWidth: number, slots: HeapSlot[]): BasinItem[] {
+  const shown = visibleCards(cards, slots.length)
   const centerX = width / 2
-  const baseY = height * 0.62
+  const slotScale = tile / 76
 
   return shown.map((card, index) => {
-    const n = stableNumber(`${BASE_LAYOUT_SEED}:${card.id}`)
-    const kind = itemKind(card, index, count)
-    const normalized = count <= 1 ? 0 : (index / (count - 1)) * 2 - 1
-    const centerBias = Math.sign(normalized) * Math.pow(Math.abs(normalized), 0.9)
-    const jitterX = ((Math.floor(n / 37) % 101) - 50) / 50
-    const jitterY = ((Math.floor(n / 97) % 101) - 50) / 50
-    const depth = Math.floor(index / 8)
-    const size =
+    const slot = slots[index % slots.length] ?? FALLBACK_SLOT
+    const kind = resolveKind(slot.kind, card, index)
+    const baseSize =
       kind === 'mini'
-        ? Math.round(tile * (count <= 5 ? 0.86 : compact ? 0.66 : 0.7))
+        ? tile
         : kind === 'photo'
-          ? Math.round(tile * (compact ? 0.48 : 0.5))
-          : kind === 'sliver'
-            ? Math.round(tile * (compact ? 0.31 : 0.34))
-            : Math.round(tile * (compact ? 0.38 : 0.4))
-    const verticalTuck =
-      kind === 'mini'
-        ? compact ? 5 : 7
-        : kind === 'photo'
-          ? compact ? 0 : 2
-          : compact ? -4 : -3
+          ? tile * 0.74
+          : kind === 'tile'
+            ? tile * 0.58
+            : kind === 'back'
+              ? tile * 0.6
+              : tile * 0.54
 
     return {
       card,
       kind,
-      size,
-      x: Math.round(centerX + centerBias * width * (count <= 5 ? 0.2 : 0.34) + jitterX * width * 0.035),
-      y: Math.round(
-        baseY +
-          jitterY * height * (count <= 5 ? 0.06 : 0.095) +
-          Math.min(depth * 3.5, 18) +
-          verticalTuck,
-      ),
-      rotate: ((Math.floor(n / 211) % 121) - 60) / (count <= 5 ? 18 : 15),
-      z: index + (kind === 'mini' ? 80 : 0) + (n % 7),
+      size: Math.round(baseSize * slot.scale),
+      x: Math.round(centerX + slot.x * heapWidth),
+      y: Math.round(slot.y * slotScale),
+      rotate: slot.rotate,
+      opacity: slot.opacity ?? 1,
+      z: slot.z,
     }
   })
 }
@@ -127,6 +221,7 @@ function BasinTile({
   const name = privateCard ? 'Private' : firstName(card.displayName)
   const hasPhoto = kind === 'photo' && !!card.imageUrl
   const isSliver = kind === 'sliver'
+  const isBack = kind === 'back'
 
   return (
     <button
@@ -146,6 +241,12 @@ function BasinTile({
       {hasPhoto ? (
         <span className="block h-full w-full p-[3px]">
           <img src={card.imageUrl} alt="" className="h-full w-full rounded-[2px] object-cover" draggable={false} />
+        </span>
+      ) : isBack || isSliver ? (
+        <span className="flex h-full flex-col justify-between px-1.5 py-1.5">
+          <span className="block h-px w-4/5 bg-[#2a251e]/8" />
+          <span className="block h-px w-2/3 bg-[#2a251e]/7" />
+          <span className="block h-px w-1/2 bg-[#2a251e]/6" />
         </span>
       ) : (
         <span className="flex h-full flex-col justify-between px-1.5 py-1.5">
@@ -228,16 +329,17 @@ export function ContributionCardRail({
   const reducedMotion = useReducedMotion()
   const count = cards.length
   const compact = tile < 84
-  const width = compact ? 338 : 548
-  const height = count === 0 ? 0 : Math.round(tile * (count > 24 ? 1.62 : count > 5 ? 1.5 : 1.35))
-  const items = buildBasinItems(cards, tile, width, height)
+  const width = compact ? 338 : 380
+  const heapPlan = getHeapPlan(count, tile)
+  const heapWidth = Math.round(width * heapPlan.widthRatio)
+  const items = buildBasinItems(cards, tile, width, heapWidth, heapPlan.slots)
 
   return (
     <div className="pointer-events-none flex flex-col items-center" aria-label="Cards gathered with the artist">
       {count > 0 && (
         <motion.div
           className="relative"
-          style={{ width, height }}
+          style={{ width, height: heapPlan.height }}
           animate={{ opacity: isGathering ? 0.5 : 1, scale: isGathering && !reducedMotion ? 0.975 : 1 }}
           transition={{ duration: reducedMotion ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }}
         >
@@ -275,7 +377,7 @@ export function ContributionCardRail({
                 animate={{
                   opacity: 1,
                   x: isGathering && !reducedMotion ? width / 2 - item.x : 0,
-                  y: isGathering && !reducedMotion ? height * 0.58 - item.y : 0,
+                  y: isGathering && !reducedMotion ? heapPlan.height * 0.58 - item.y : 0,
                   rotate: isGathering && !reducedMotion ? item.rotate * 0.18 : item.rotate,
                   scale: isGathering && !reducedMotion ? 0.72 : 1,
                 }}
@@ -307,7 +409,7 @@ export function ContributionCardRail({
 
       {!hideLeaveYours && !isGathering && (
         <motion.div
-          className={count > 0 ? 'relative z-10 mt-3 md:mt-3' : 'relative z-10 mt-0'}
+          className={count > 5 ? 'relative z-10 mt-7 md:mt-7' : count > 0 ? 'relative z-10 mt-6 md:mt-6' : 'relative z-10 mt-0'}
           animate={{
             opacity: isGathering ? 0 : 1,
             rotate: count === 0 ? -1 : 2.5,
