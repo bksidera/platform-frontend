@@ -41,7 +41,7 @@ type Slot = {
   opacity?: number
 }
 
-const BASE_LAYOUT_SEED = 'living-frame-v4-mound'
+const BASE_LAYOUT_SEED = 'living-frame-v5-mound'
 const CARD_ASPECT = 1.05
 
 function stableNumber(seed: string): number {
@@ -65,6 +65,10 @@ function sortNewest(cards: Contribution[]): Contribution[] {
   return [...cards].sort((a, b) => cardTime(b) - cardTime(a))
 }
 
+function hasExpressiveContent(card: Contribution): boolean {
+  return Boolean(card.note || card.imageUrl)
+}
+
 function foregroundLimit(count: number): number {
   if (count <= 1) return count
   if (count <= 5) return 2
@@ -78,9 +82,36 @@ function foregroundCards(cards: Contribution[], isOwn: (card: Contribution) => b
   const newest = sortNewest(cards)
   const own = newest.filter(isOwn).slice(0, Math.min(2, limit))
   const selected = new Set(own.map((card) => card.id))
-  const others = newest.filter((card) => !selected.has(card.id)).slice(0, limit - own.length)
+  const othersPool = newest.filter((card) => !selected.has(card.id))
+  const expressiveOthers = othersPool.filter(hasExpressiveContent)
+  const fallbackOthers = othersPool.filter((card) => !hasExpressiveContent(card))
+  const others = [...expressiveOthers, ...fallbackOthers].slice(0, limit - own.length)
 
-  return [...own, ...others].slice(0, limit)
+  const foreground = [...own, ...others].slice(0, limit)
+  const noteTextLeadIndex = foreground.findIndex((card) => !card.imageUrl && card.note)
+  if (noteTextLeadIndex > 0) {
+    const [textLead] = foreground.splice(noteTextLeadIndex, 1)
+    if (textLead) foreground.unshift(textLead)
+  } else if (noteTextLeadIndex === -1) {
+    const foregroundIds = new Set(foreground.map((card) => card.id))
+    const replacement =
+      newest.find((card) => !card.imageUrl && card.note && !foregroundIds.has(card.id)) ??
+      newest.find((card) => !card.imageUrl && !foregroundIds.has(card.id))
+    const textLeadIndex = foreground.findIndex((card) => !card.imageUrl)
+
+    if (replacement) {
+      foreground.splice(0, 1, replacement)
+    } else if (textLeadIndex > 0) {
+      const [textLead] = foreground.splice(textLeadIndex, 1)
+      if (textLead) foreground.unshift(textLead)
+    }
+  } else {
+    const textLeadIndex = foreground.findIndex((card) => !card.imageUrl)
+    const [textLead] = foreground.splice(textLeadIndex, 1)
+    if (textLead) foreground.unshift(textLead)
+  }
+
+  return foreground
 }
 
 function remainingCards(cards: Contribution[], selected: Contribution[]): Contribution[] {
@@ -91,7 +122,7 @@ function remainingCards(cards: Contribution[], selected: Contribution[]): Contri
 function moundWidthRatio(count: number): number {
   if (count <= 1) return 0.3
   if (count <= 5) return 0.5
-  if (count <= 12) return 0.5
+  if (count <= 12) return 0.58
   if (count <= 25) return 0.54
   if (count <= 50) return 0.76
   return 0.9
@@ -101,10 +132,10 @@ function visibleCounts(count: number) {
   const foreground = foregroundLimit(count)
   if (count <= foreground) return { foreground, midground: 0, background: 0 }
   if (count <= 5) return { foreground, midground: count - foreground, background: 0 }
-  if (count <= 12) return { foreground, midground: Math.min(4, count - foreground), background: Math.max(0, count - foreground - 4) }
-  if (count <= 25) return { foreground, midground: Math.min(7, count - foreground), background: Math.min(14, count - foreground - 7) }
-  if (count <= 50) return { foreground, midground: 9, background: 22 }
-  return { foreground, midground: 10, background: 28 }
+  if (count <= 12) return { foreground, midground: Math.min(5, count - foreground), background: Math.max(0, count - foreground - 5) }
+  if (count <= 25) return { foreground, midground: Math.min(10, count - foreground), background: Math.min(16, Math.max(0, count - foreground - 10)) }
+  if (count <= 50) return { foreground, midground: 11, background: 28 }
+  return { foreground, midground: 12, background: 38 }
 }
 
 function generateBackgroundSlots(count: number): Slot[] {
@@ -117,18 +148,18 @@ function generateBackgroundSlots(count: number): Slot[] {
     const rowIndex = Math.floor(i / rows)
     const perRow = Math.ceil(total / rows)
     const t = perRow <= 1 ? 0.5 : rowIndex / (perRow - 1)
-    const rowSpan = 0.94 - row * 0.1
-    const jitterX = ((stableNumber(`${BASE_LAYOUT_SEED}:bgx:${count}:${i}`) % 100) / 100 - 0.5) * 0.035
-    const jitterY = ((stableNumber(`${BASE_LAYOUT_SEED}:bgy:${count}:${i}`) % 100) / 100 - 0.5) * 5
+    const rowSpan = 0.88 - row * 0.11
+    const jitterX = ((stableNumber(`${BASE_LAYOUT_SEED}:bgx:${count}:${i}`) % 100) / 100 - 0.5) * 0.028
+    const jitterY = ((stableNumber(`${BASE_LAYOUT_SEED}:bgy:${count}:${i}`) % 100) / 100 - 0.5) * 3
 
     slots.push({
       tier: 'background',
-      shape: i % 5 === 0 ? 'sliver' : 'back',
+      shape: i % 7 === 0 ? 'sliver' : 'back',
       x: (t - 0.5) * rowSpan + jitterX,
-      y: 30 + row * 12 + jitterY,
+      y: 31 + row * 10 + jitterY,
       rotate: ((stableNumber(`${BASE_LAYOUT_SEED}:bgr:${count}:${i}`) % 120) / 10) - 6,
       z: 5 + row * 2 + (i % 3),
-      opacity: 0.42 + row * 0.04,
+      opacity: 1,
     })
   }
 
@@ -140,7 +171,7 @@ function generateMidgroundSlots(count: number): Slot[] {
   const slots: Slot[] = []
   if (total === 0) return slots
 
-  const span = count <= 12 ? 0.58 : count <= 25 ? 0.68 : 0.78
+  const span = count <= 12 ? 0.56 : count <= 25 ? 0.6 : 0.72
   for (let i = 0; i < total; i += 1) {
     const t = total <= 1 ? 0.5 : i / (total - 1)
     const jitterX = ((stableNumber(`${BASE_LAYOUT_SEED}:midx:${count}:${i}`) % 100) / 100 - 0.5) * 0.045
@@ -149,10 +180,10 @@ function generateMidgroundSlots(count: number): Slot[] {
       tier: 'midground',
       shape: 'full',
       x: (t - 0.5) * span + jitterX,
-      y: 56 + (i % 2) * 12 + jitterY,
+      y: 58 + (i % 3) * 8 + jitterY,
       rotate: ((stableNumber(`${BASE_LAYOUT_SEED}:midr:${count}:${i}`) % 100) / 10) - 5,
       z: 28 + i,
-      opacity: 0.7,
+      opacity: 1,
     })
   }
 
@@ -174,8 +205,8 @@ function foregroundSlots(count: number): Slot[] {
 
   return [
     { tier: 'foreground', shape: 'full', x: 0, y: 69, rotate: -0.7, z: 86 },
-    { tier: 'foreground', shape: 'full', x: -0.18, y: 88, rotate: -2.6, z: 84 },
-    { tier: 'foreground', shape: 'full', x: 0.18, y: 90, rotate: 2.4, z: 85 },
+    { tier: 'foreground', shape: 'full', x: -0.28, y: 98, rotate: -2.4, z: 84 },
+    { tier: 'foreground', shape: 'full', x: 0.28, y: 99, rotate: 2.3, z: 85 },
   ]
 }
 
@@ -231,6 +262,15 @@ function buildMoundItems(cards: Contribution[], tile: number, stageWidth: number
   })
 }
 
+function truncateAtWord(value: string, limit: number): string {
+  if (value.length <= limit) return value
+
+  const clipped = value.slice(0, limit + 1)
+  const trailingWord = clipped.search(/\s+\S*$/)
+  const boundary = trailingWord > Math.floor(limit * 0.55) ? trailingWord : limit
+  return `${value.slice(0, boundary).trimEnd()}...`
+}
+
 function MoundCard({
   item,
   onClick,
@@ -251,6 +291,7 @@ function MoundCard({
     'rgba(224,213,193,0.98)',
   ][tone] ?? 'rgba(242,235,222,0.99)'
   const contentOpacity = readable ? 1 : midground ? 0.28 : 0
+  const displayedNote = card.note ? truncateAtWord(card.note, readable ? 44 : 18) : null
 
   return (
     <button
@@ -268,14 +309,14 @@ function MoundCard({
           tier === 'foreground'
             ? '0 1px 0 rgba(255,255,255,0.52) inset, 0 12px 24px rgba(0,0,0,0.42), 0 2px 5px rgba(0,0,0,0.24)'
             : tier === 'midground'
-              ? '0 1px 0 rgba(255,255,255,0.35) inset, 0 7px 14px rgba(0,0,0,0.38)'
-              : '0 3px 8px rgba(0,0,0,0.44)',
+              ? '0 1px 0 rgba(255,255,255,0.35) inset, 0 7px 14px rgba(0,0,0,0.42), 0 1px 3px rgba(0,0,0,0.22)'
+              : '0 1px 0 rgba(255,255,255,0.2) inset, 0 4px 9px rgba(0,0,0,0.5)',
         filter:
           tier === 'foreground'
             ? 'none'
             : tier === 'midground'
-              ? 'brightness(0.78) saturate(0.8)'
-              : 'brightness(0.58) saturate(0.62)',
+              ? 'brightness(0.76) saturate(0.78)'
+              : 'brightness(0.56) saturate(0.6)',
       }}
     >
       {shape !== 'full' ? (
@@ -320,7 +361,7 @@ function MoundCard({
                 WebkitLineClamp: readable ? 3 : 2,
               }}
             >
-              {card.note}
+              {displayedNote}
             </span>
           )}
           {!hasNote && <span className="mt-auto block h-px w-2/3 bg-[#2a251e]/12" />}
@@ -337,7 +378,7 @@ function LeaveYoursCard({
   tile: number
   onOpen: () => void
 }) {
-  const size = tile
+  const size = Math.round(tile * 0.84)
 
   return (
     <motion.button
@@ -345,8 +386,8 @@ function LeaveYoursCard({
       type="button"
       onClick={onOpen}
       aria-label="Leave a card"
-      className="pointer-events-auto flex flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[7px] border border-[#d8ceb9]/75 p-3
-                 text-[#211c16] shadow-[0_1px_0_rgba(255,255,255,0.62)_inset,0_7px_16px_rgba(0,0,0,0.28)]
+      className="pointer-events-auto flex flex-col items-center justify-center gap-1 overflow-hidden rounded-[7px] border border-[#d8ceb9]/68 p-2.5
+                 text-[#211c16] shadow-[0_1px_0_rgba(255,255,255,0.58)_inset,0_5px_12px_rgba(0,0,0,0.22)]
                  transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-parchment/70"
       style={{
         width: size,
@@ -355,8 +396,8 @@ function LeaveYoursCard({
           'linear-gradient(145deg, rgba(244,237,224,0.99), rgba(231,222,204,0.98) 58%, rgba(220,209,188,0.96))',
       }}
     >
-      <span className="font-display text-[15px] leading-tight text-[#3b342b]/88">Leave yours</span>
-      <span className="text-[23px] font-light leading-none text-[#6e6558]/74">+</span>
+      <span className="font-display text-[13px] leading-tight text-[#3b342b]/76">Leave yours</span>
+      <span className="text-[19px] font-light leading-none text-[#6e6558]/62">+</span>
     </motion.button>
   )
 }
@@ -428,7 +469,7 @@ export function ContributionCardRail({
 
       {!hideLeaveYours && !isGathering && (
         <motion.div
-          className={count > 0 ? 'relative z-10 mt-5 md:mt-5' : 'relative z-10 mt-0'}
+          className={count > 0 ? 'relative z-10 mt-7 md:mt-7' : 'relative z-10 mt-0'}
           animate={{
             opacity: isGathering ? 0 : 1,
             rotate: 0,
