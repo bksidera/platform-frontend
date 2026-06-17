@@ -10,6 +10,7 @@ import { motion } from 'framer-motion'
 const PRESETS = [500, 1000, 2500]
 const NAME_LIMIT = 24
 const NOTE_LIMIT = 140
+const FALLBACK_DISPLAY_NAME = 'Visitor'
 
 export interface CardDraft {
   displayName: string
@@ -132,10 +133,10 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
 
   const amountSelected = !justCard && !!amountCents && amountCents >= 100
   const hasDisplayName = name.trim().length > 0
-  const hasStartedCard = note.trim().length > 0 || hasDisplayName || !!imageUrl
+  const hasNote = note.trim().length > 0
+  const hasStartedCard = hasNote || hasDisplayName || !!imageUrl
   const hasCompletionChoice = amountSelected || justCard
-  const canPlace = hasDisplayName && hasCompletionChoice
-  const needsName = hasCompletionChoice && !hasDisplayName
+  const canPlace = hasStartedCard && hasCompletionChoice
   const {
     keyboardBottomSpace,
     scrollFocusedFieldIntoView,
@@ -148,7 +149,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
     blurActiveTextField()
     if (!canPlace) return
     onPlace({
-      displayName: name.trim(),
+      displayName: name.trim() || FALLBACK_DISPLAY_NAME,
       note: note.trim(),
       imageUrl,
       amountCents: justCard ? null : amountCents,
@@ -179,29 +180,43 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
   return (
     <motion.div
       layout
-      className="w-full rounded-[12px] border border-[#d5c7ad]/80 px-5 pt-5 pb-5 text-[#211c16]"
+      className="w-full rounded-[11px] border border-[#d5c7ad]/78 px-5 pt-4 pb-4 text-[#211c16]"
       style={{
         ...cardStyle,
         marginBottom: keyboardBottomSpace ? `${keyboardBottomSpace}px` : undefined,
       }}
     >
-      <div className="mb-5">
-        <p className="font-display text-xl leading-none text-[#211c16]">Leave a card</p>
+      <div className="mb-4">
+        <p className="font-display text-[14px] leading-none text-[#211c16]/52">Leave a card</p>
       </div>
 
       <label className="block mb-3" data-composer-section>
+        <span className="sr-only">Your name</span>
+        <input
+          autoFocus
+          aria-label="Your name"
+          placeholder="Name"
+          maxLength={NAME_LIMIT}
+          value={name}
+          onFocus={scrollFocusedFieldIntoView}
+          onBlur={clearFallbackKeyboardSpace}
+          onChange={(e) => setName(e.target.value.slice(0, NAME_LIMIT))}
+          className="w-full rounded-none border-0 bg-transparent px-0 py-0 font-display text-[17px] leading-6 text-[#211c16]/66 placeholder:text-[#211c16]/34 focus:outline-none"
+        />
+      </label>
+
+      <label className="block mb-4" data-composer-section>
         <span className="sr-only">Your card</span>
         <textarea
-          autoFocus
           maxLength={NOTE_LIMIT}
-          rows={5}
+          rows={3}
           aria-label="Your card"
           placeholder="What stayed with you?"
           value={note}
           onFocus={scrollFocusedFieldIntoView}
           onBlur={clearFallbackKeyboardSpace}
           onChange={(e) => setNote(e.target.value.slice(0, NOTE_LIMIT))}
-          className="w-full resize-none bg-transparent px-0 py-0.5 font-display text-[20px] leading-7 text-[#211c16]/84 placeholder:text-[#211c16]/42 focus:outline-none"
+          className="w-full resize-none bg-transparent px-0 py-0 font-display text-[24px] leading-8 text-[#211c16]/86 placeholder:text-[#211c16]/34 focus:outline-none sm:text-[25px]"
         />
         {note.length >= 120 && (
           <span className="mt-1 block text-right text-[10px] text-[#211c16]/38">
@@ -210,62 +225,52 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
         )}
       </label>
 
-      <label className="block mb-4" data-composer-section>
-        <span className="sr-only">Your name</span>
-        <input
-          aria-label="Your name"
-          placeholder="Name"
-          maxLength={NAME_LIMIT}
-          value={name}
-          onFocus={scrollFocusedFieldIntoView}
-          onBlur={clearFallbackKeyboardSpace}
-          onChange={(e) => setName(e.target.value.slice(0, NAME_LIMIT))}
-          className="w-full rounded-none border-0 bg-transparent px-0 pb-1 font-display text-[17px] text-[#211c16]/72 placeholder:text-[#211c16]/34 focus:outline-none"
-        />
-      </label>
-
-      <div className="mb-3">
-        {imageUrl ? (
-          <div className="relative h-14 w-14 rotate-[-1.5deg] rounded-[4px] bg-[#fbf5e8] p-1 shadow-[0_1px_2px_rgba(0,0,0,0.22)]">
-            <img
-              src={imageUrl}
-              alt=""
-              className="h-full w-full rounded-[2px] object-cover opacity-90 saturate-[0.55] contrast-[0.9] sepia-[0.12]"
-            />
-            <button
-              type="button"
-              aria-label="Remove photo"
+      {hasStartedCard && (
+        <motion.div
+          className="mb-3"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {imageUrl ? (
+            <div className="relative h-14 w-14 rotate-[-1.5deg] rounded-[4px] bg-[#fbf5e8] p-1 shadow-[0_1px_2px_rgba(0,0,0,0.22)]">
+              <img
+                src={imageUrl}
+                alt=""
+                className="h-full w-full rounded-[2px] object-cover opacity-90 saturate-[0.55] contrast-[0.9] sepia-[0.12]"
+              />
+              <button
+                type="button"
+                aria-label="Remove photo"
+                onPointerDown={blurActiveTextField}
+                onClick={() => setImageUrl(null)}
+                className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-[#211c16] border border-[#f2ebdd]/70 text-[#f2ebdd] text-[10px] leading-none"
+              >
+                ×
+              </button>
+            </div>
+          ) : (
+            <label
+              className="inline-flex min-h-8 cursor-pointer items-center gap-2 font-display text-[14px] text-[#211c16]/44 transition-colors hover:text-[#211c16]/66"
               onPointerDown={blurActiveTextField}
-              onClick={() => setImageUrl(null)}
-              className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-[#211c16] border border-[#f2ebdd]/70 text-[#f2ebdd] text-[10px] leading-none"
             >
-              ×
-            </button>
-          </div>
-        ) : (
-          <label
-            className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 text-sm text-[#211c16]/48 transition-colors hover:text-[#211c16]/72"
-            onPointerDown={blurActiveTextField}
-          >
-            <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[#211c16]/12 text-base leading-none">
-              +
-            </span>
-            <span className="flex flex-col leading-tight">
-              <span>Add a photo</span>
-              <span className="text-[11px] text-[#211c16]/36">Optional</span>
-            </span>
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) setImageUrl(URL.createObjectURL(f))
-              }}
-            />
-          </label>
-        )}
-      </div>
+              <span className="text-[15px] leading-none text-[#211c16]/34">+</span>
+              <span className="leading-none">
+                Add a photo <span className="font-sans text-[11px] text-[#211c16]/34">Optional</span>
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) setImageUrl(URL.createObjectURL(f))
+                }}
+              />
+            </label>
+          )}
+        </motion.div>
+      )}
 
       <motion.div
         layout
@@ -280,50 +285,52 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="mb-2.5">
-              <span className="block text-[11px] font-medium text-[#211c16]/64">Amount</span>
+              <span className="block text-[11px] font-medium text-[#211c16]/50">Amount</span>
               <p className="mt-0.5 text-[11px] leading-snug text-[#211c16]/50">
                 Optional. Only the creator sees the amount.
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
-              {PRESETS.map((cents) => (
+            <div className="space-y-1.5">
+              <div className="grid grid-cols-4 gap-1">
+                {PRESETS.map((cents) => (
+                  <button
+                    key={cents}
+                    type="button"
+                    onPointerDown={blurActiveTextField}
+                    onClick={() => selectAmount(cents)}
+                    aria-pressed={amountCents === cents && !customOpen && !justCard}
+                    className={`min-h-9 rounded-[5px] border border-transparent px-2 py-1.5 font-display text-[14px] transition-colors ${
+                      amountCents === cents && !customOpen && !justCard
+                        ? 'bg-[#211c16]/7 text-[#211c16]/82 shadow-[0_-1px_0_rgba(33,28,22,0.28)_inset]'
+                        : 'text-[#211c16]/56 hover:bg-[#211c16]/5 hover:text-[#211c16]/78'
+                    }`}
+                  >
+                    ${cents / 100}
+                  </button>
+                ))}
                 <button
-                  key={cents}
                   type="button"
                   onPointerDown={blurActiveTextField}
-                  onClick={() => selectAmount(cents)}
-                  aria-pressed={amountCents === cents && !customOpen && !justCard}
-                  className={`min-h-11 flex-1 rounded-[6px] border py-2 text-sm transition-colors ${
-                    amountCents === cents && !customOpen && !justCard
-                      ? 'border-[#211c16]/70 bg-[#211c16] font-medium text-[#f2ebdd]'
-                      : 'border-[#211c16]/16 text-[#211c16]/58 hover:border-[#211c16]/30 hover:text-[#211c16]/85'
+                  onClick={openCustom}
+                  aria-pressed={customOpen && !justCard}
+                  className={`min-h-9 rounded-[5px] border border-transparent px-2 py-1.5 font-display text-[14px] transition-colors ${
+                    customOpen && !justCard
+                      ? 'bg-[#211c16]/7 text-[#211c16]/82 shadow-[0_-1px_0_rgba(33,28,22,0.28)_inset]'
+                      : 'text-[#211c16]/56 hover:bg-[#211c16]/5 hover:text-[#211c16]/78'
                   }`}
                 >
-                  ${cents / 100}
+                  Other
                 </button>
-              ))}
-              <button
-                type="button"
-                onPointerDown={blurActiveTextField}
-                onClick={openCustom}
-                aria-pressed={customOpen && !justCard}
-                className={`min-h-11 flex-1 rounded-[6px] border py-2 text-sm transition-colors ${
-                  customOpen && !justCard
-                    ? 'border-[#211c16]/70 bg-[#211c16] font-medium text-[#f2ebdd]'
-                    : 'border-[#211c16]/16 text-[#211c16]/58 hover:border-[#211c16]/30 hover:text-[#211c16]/85'
-                }`}
-              >
-                Other
-              </button>
+              </div>
               <button
                 type="button"
                 onPointerDown={blurActiveTextField}
                 onClick={selectJustCard}
                 aria-pressed={justCard}
-                className={`min-h-11 rounded-[6px] border px-2 py-2 text-sm transition-colors ${
+                className={`mx-auto block min-h-8 rounded-[5px] border border-transparent px-4 py-1.5 font-display text-[14px] transition-colors ${
                   justCard
-                    ? 'border-[#211c16]/70 bg-[#211c16] font-medium text-[#f2ebdd]'
-                    : 'border-[#211c16]/16 text-[#211c16]/58 hover:border-[#211c16]/30 hover:text-[#211c16]/85'
+                    ? 'bg-[#211c16]/7 text-[#211c16]/82 shadow-[0_-1px_0_rgba(33,28,22,0.28)_inset]'
+                    : 'text-[#211c16]/56 hover:bg-[#211c16]/5 hover:text-[#211c16]/78'
                 }`}
               >
                 Just the card
@@ -345,14 +352,8 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
               const d = parseFloat(e.target.value)
               setAmountCents(d >= 1 ? Math.round(d * 100) : null)
             }}
-            className="w-full rounded-[6px] border border-[#211c16]/16 bg-transparent px-3 py-1.5 text-xs text-[#211c16] placeholder:text-[#211c16]/35 focus:border-[#211c16]/32 focus:outline-none"
+            className="w-full rounded-[5px] border border-transparent bg-[#211c16]/5 px-3 py-1.5 text-xs text-[#211c16] placeholder:text-[#211c16]/35 focus:bg-[#211c16]/7 focus:outline-none"
           />
-        )}
-
-        {needsName && (
-          <p className="text-[11px] leading-snug text-[#211c16]/50">
-            Add your name to place the card.
-          </p>
         )}
       </motion.div>
 
