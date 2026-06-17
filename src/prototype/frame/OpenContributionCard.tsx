@@ -202,7 +202,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
       }}
     >
       <div className="mb-4">
-        <p className="font-display text-[17px] leading-none text-[#211c16]/76">Leave your card</p>
+        <p className="font-display text-[20px] leading-none text-[#211c16]/88">Leave your card</p>
       </div>
 
       <label className="block mb-3" data-composer-section>
@@ -231,7 +231,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
           onFocus={scrollFocusedFieldIntoView}
           onBlur={clearFallbackKeyboardSpace}
           onChange={(e) => setNote(e.target.value.slice(0, NOTE_LIMIT))}
-          className="w-full resize-none bg-transparent px-0 py-0 font-display text-[20px] leading-7 text-[#211c16]/84 placeholder:text-[#211c16]/34 focus:outline-none sm:text-[21px]"
+          className="w-full resize-none bg-transparent px-0 py-0 font-display text-[16px] leading-6 text-[#211c16]/82 placeholder:text-[#211c16]/40 focus:outline-none"
         />
         {note.length >= 120 && (
           <span className="mt-1 block text-right text-[10px] text-[#211c16]/38">
@@ -270,9 +270,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
               onPointerDown={blurActiveTextField}
             >
               <span className="text-[15px] leading-none text-[#211c16]/34">+</span>
-              <span className="leading-none">
-                Add a photo <span className="font-sans text-[11px] text-[#211c16]/34">Optional</span>
-              </span>
+              <span className="leading-none">Add a photo</span>
               <input
                 type="file"
                 accept="image/*"
