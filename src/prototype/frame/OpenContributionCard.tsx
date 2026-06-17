@@ -123,6 +123,7 @@ function useMobileKeyboardAwareComposer() {
 }
 
 export function OpenContributionCard({ busy, error, onPlace }: Props) {
+  const customInputRef = useRef<HTMLInputElement | null>(null)
   const [name, setName] = useState('')
   const [note, setNote] = useState('')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
@@ -137,6 +138,12 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
   const hasStartedCard = hasNote || hasDisplayName || !!imageUrl
   const hasCompletionChoice = amountSelected || justCard
   const canPlace = hasStartedCard && hasCompletionChoice
+  const helperText = !hasStartedCard
+    ? 'Add your name or note to begin.'
+    : !hasCompletionChoice
+      ? 'Choose an amount or Just the card to place it.'
+      : null
+  const placeButtonActive = canPlace && !busy
   const {
     keyboardBottomSpace,
     scrollFocusedFieldIntoView,
@@ -144,6 +151,12 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
     blurActiveTextField,
   } =
     useMobileKeyboardAwareComposer()
+
+  useEffect(() => {
+    if (!customOpen) return
+
+    window.requestAnimationFrame(() => customInputRef.current?.focus())
+  }, [customOpen])
 
   const place = () => {
     blurActiveTextField()
@@ -174,7 +187,9 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
   const selectJustCard = () => {
     blurActiveTextField()
     setJustCard(true)
+    setAmountCents(null)
     setCustomOpen(false)
+    setCustom('')
   }
 
   return (
@@ -187,7 +202,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
       }}
     >
       <div className="mb-4">
-        <p className="font-display text-[14px] leading-none text-[#211c16]/52">Leave a card</p>
+        <p className="font-display text-[17px] leading-none text-[#211c16]/76">Leave your card</p>
       </div>
 
       <label className="block mb-3" data-composer-section>
@@ -201,7 +216,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
           onFocus={scrollFocusedFieldIntoView}
           onBlur={clearFallbackKeyboardSpace}
           onChange={(e) => setName(e.target.value.slice(0, NAME_LIMIT))}
-          className="w-full rounded-none border-0 bg-transparent px-0 py-0 font-display text-[17px] leading-6 text-[#211c16]/66 placeholder:text-[#211c16]/34 focus:outline-none"
+          className="w-full rounded-none border-0 bg-transparent px-0 py-0 font-display text-[16px] leading-6 text-[#211c16]/66 placeholder:text-[#211c16]/34 focus:outline-none"
         />
       </label>
 
@@ -216,7 +231,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
           onFocus={scrollFocusedFieldIntoView}
           onBlur={clearFallbackKeyboardSpace}
           onChange={(e) => setNote(e.target.value.slice(0, NOTE_LIMIT))}
-          className="w-full resize-none bg-transparent px-0 py-0 font-display text-[24px] leading-8 text-[#211c16]/86 placeholder:text-[#211c16]/34 focus:outline-none sm:text-[25px]"
+          className="w-full resize-none bg-transparent px-0 py-0 font-display text-[20px] leading-7 text-[#211c16]/84 placeholder:text-[#211c16]/34 focus:outline-none sm:text-[21px]"
         />
         {note.length >= 120 && (
           <span className="mt-1 block text-right text-[10px] text-[#211c16]/38">
@@ -287,7 +302,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
             <div className="mb-2.5">
               <span className="block text-[11px] font-medium text-[#211c16]/50">Amount</span>
               <p className="mt-0.5 text-[11px] leading-snug text-[#211c16]/50">
-                Optional. Only the creator sees the amount.
+                Only the creator sees the amount.
               </p>
             </div>
             <div className="space-y-1.5">
@@ -308,19 +323,36 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
                     ${cents / 100}
                   </button>
                 ))}
-                <button
-                  type="button"
-                  onPointerDown={blurActiveTextField}
-                  onClick={openCustom}
-                  aria-pressed={customOpen && !justCard}
-                  className={`min-h-9 rounded-[5px] border border-transparent px-2 py-1.5 font-display text-[14px] transition-colors ${
-                    customOpen && !justCard
-                      ? 'bg-[#211c16]/7 text-[#211c16]/82 shadow-[0_-1px_0_rgba(33,28,22,0.28)_inset]'
-                      : 'text-[#211c16]/56 hover:bg-[#211c16]/5 hover:text-[#211c16]/78'
-                  }`}
-                >
-                  Other
-                </button>
+                {customOpen && !justCard ? (
+                  <label className="flex min-h-9 items-center justify-center gap-1 rounded-[5px] bg-[#211c16]/7 px-2 py-1.5 font-display text-[14px] text-[#211c16]/82 shadow-[0_-1px_0_rgba(33,28,22,0.28)_inset]">
+                    <span className="text-[#211c16]/48">$</span>
+                    <input
+                      ref={customInputRef}
+                      inputMode="decimal"
+                      aria-label="Custom amount"
+                      placeholder="Other"
+                      value={custom}
+                      onFocus={scrollFocusedFieldIntoView}
+                      onBlur={clearFallbackKeyboardSpace}
+                      onChange={(e) => {
+                        setCustom(e.target.value)
+                        const d = parseFloat(e.target.value)
+                        setAmountCents(d >= 1 ? Math.round(d * 100) : null)
+                      }}
+                      className="min-w-0 flex-1 bg-transparent text-center text-[#211c16]/82 placeholder:text-[#211c16]/42 focus:outline-none"
+                    />
+                  </label>
+                ) : (
+                  <button
+                    type="button"
+                    onPointerDown={blurActiveTextField}
+                    onClick={openCustom}
+                    aria-pressed={false}
+                    className="min-h-9 rounded-[5px] border border-transparent px-2 py-1.5 font-display text-[14px] text-[#211c16]/56 transition-colors hover:bg-[#211c16]/5 hover:text-[#211c16]/78"
+                  >
+                    Other
+                  </button>
+                )}
               </div>
               <button
                 type="button"
@@ -338,40 +370,29 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
             </div>
           </motion.div>
         )}
-
-        {customOpen && !justCard && hasStartedCard && (
-          <input
-            autoFocus
-            inputMode="decimal"
-            placeholder="Amount in dollars"
-            value={custom}
-            onFocus={scrollFocusedFieldIntoView}
-            onBlur={clearFallbackKeyboardSpace}
-            onChange={(e) => {
-              setCustom(e.target.value)
-              const d = parseFloat(e.target.value)
-              setAmountCents(d >= 1 ? Math.round(d * 100) : null)
-            }}
-            className="w-full rounded-[5px] border border-transparent bg-[#211c16]/5 px-3 py-1.5 text-xs text-[#211c16] placeholder:text-[#211c16]/35 focus:bg-[#211c16]/7 focus:outline-none"
-          />
-        )}
       </motion.div>
 
       {error && <p className="mt-3 text-xs text-red-800/80">{error}</p>}
 
-      {hasStartedCard && hasCompletionChoice && (
-        <button
-          type="button"
-          disabled={busy || !canPlace}
-          onPointerDown={blurActiveTextField}
-          onClick={place}
-          className="mt-5 w-full rounded-[9px] border border-[#211c16] bg-[#211c16] py-3 font-display text-base text-[#f2ebdd]
-                   shadow-[0_8px_18px_rgba(0,0,0,0.18)] transition-opacity
-                   disabled:border-[#211c16]/8 disabled:bg-[#211c16]/8 disabled:text-[#211c16]/32 disabled:shadow-none"
-        >
-          {busy ? 'Placing card...' : 'Place card'}
-        </button>
+      {helperText && (
+        <p className="mt-4 text-center text-[11px] leading-snug text-[#211c16]/42">
+          {helperText}
+        </p>
       )}
+
+      <button
+        type="button"
+        disabled={busy || !canPlace}
+        onPointerDown={blurActiveTextField}
+        onClick={place}
+        className={`mt-5 w-full rounded-[9px] border py-3 font-display text-base transition-colors ${
+          placeButtonActive
+            ? 'border-[#211c16] bg-[#211c16] text-[#f2ebdd] shadow-[0_8px_18px_rgba(0,0,0,0.18)]'
+            : 'border-[#211c16]/10 bg-[#211c16]/5 text-[#211c16]/32 shadow-none'
+        }`}
+      >
+        {busy ? 'Placing card...' : 'Place card'}
+      </button>
     </motion.div>
   )
 }
