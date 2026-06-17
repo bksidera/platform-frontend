@@ -32,6 +32,13 @@ const cardStyle = {
     '0 1px 0 rgba(255,255,255,0.65) inset, 0 22px 48px rgba(0,0,0,0.34), 0 7px 20px rgba(0,0,0,0.26)',
 }
 
+// Selection reads through a soft, deeper tone of the same paper — clarity
+// without darkness, so the chosen amount stays clearly lighter than the
+// dark "Place card" button (the only truly dark object).
+const CHIP_SELECTED =
+  'bg-[#d6c6a4] text-[#211c16] font-medium shadow-[inset_0_1px_2px_rgba(33,28,22,0.18)]'
+const CHIP_IDLE = 'text-[#211c16]/56 hover:bg-[#211c16]/5 hover:text-[#211c16]/78'
+
 function isMobileViewport() {
   return window.matchMedia('(max-width: 767px)').matches
 }
@@ -141,7 +148,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
   const helperText = !hasStartedCard
     ? 'Add your name or note to begin.'
     : !hasCompletionChoice
-      ? 'Choose an amount or Just the card to place it.'
+      ? 'Add an amount, or just the card.'
       : null
   const placeButtonActive = canPlace && !busy
   const {
@@ -216,7 +223,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
           onFocus={scrollFocusedFieldIntoView}
           onBlur={clearFallbackKeyboardSpace}
           onChange={(e) => setName(e.target.value.slice(0, NAME_LIMIT))}
-          className="w-full rounded-none border-0 bg-transparent px-0 py-0 font-display text-[16px] leading-6 text-[#211c16]/66 placeholder:text-[#211c16]/34 focus:outline-none"
+          className="w-full rounded-none border-0 bg-transparent px-0 py-0 font-display text-[16px] leading-6 text-[#211c16]/72 placeholder:text-[#8a7d68] focus:outline-none"
         />
       </label>
 
@@ -231,7 +238,9 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
           onFocus={scrollFocusedFieldIntoView}
           onBlur={clearFallbackKeyboardSpace}
           onChange={(e) => setNote(e.target.value.slice(0, NOTE_LIMIT))}
-          className="w-full resize-none bg-transparent px-0 py-0 font-display text-[16px] leading-6 text-[#211c16]/82 placeholder:text-[#211c16]/40 focus:outline-none"
+          className={`w-full resize-none bg-transparent px-0 py-0 font-display text-[16px] leading-6 text-[#211c16]/82 focus:outline-none ${
+            hasDisplayName ? 'placeholder:text-[#8a7d68]' : 'placeholder:text-[#b0a489]'
+          }`}
         />
         {note.length >= 120 && (
           <span className="mt-1 block text-right text-[10px] text-[#211c16]/38">
@@ -266,11 +275,15 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
             </div>
           ) : (
             <label
-              className="inline-flex min-h-8 cursor-pointer items-center gap-2 font-display text-[14px] text-[#211c16]/44 transition-colors hover:text-[#211c16]/66"
+              className="group inline-flex cursor-pointer items-center gap-3 text-left"
               onPointerDown={blurActiveTextField}
             >
-              <span className="text-[15px] leading-none text-[#211c16]/34">+</span>
-              <span className="leading-none">Add a photo</span>
+              <span className="flex h-14 w-14 -rotate-[1.5deg] items-center justify-center rounded-[4px] border border-[#211c16]/15 bg-[#fbf5e8]/40 text-[18px] font-light leading-none text-[#211c16]/28 shadow-[0_1px_2px_rgba(0,0,0,0.06)] transition-colors group-hover:border-[#211c16]/28 group-hover:text-[#211c16]/45">
+                +
+              </span>
+              <span className="font-display text-[14px] text-[#211c16]/48 transition-colors group-hover:text-[#211c16]/68">
+                Add a photo
+              </span>
               <input
                 type="file"
                 accept="image/*"
@@ -313,17 +326,15 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
                     onClick={() => selectAmount(cents)}
                     aria-pressed={amountCents === cents && !customOpen && !justCard}
                     className={`min-h-9 rounded-[5px] border border-transparent px-2 py-1.5 font-display text-[14px] transition-colors ${
-                      amountCents === cents && !customOpen && !justCard
-                        ? 'bg-[#211c16]/7 text-[#211c16]/82 shadow-[0_-1px_0_rgba(33,28,22,0.28)_inset]'
-                        : 'text-[#211c16]/56 hover:bg-[#211c16]/5 hover:text-[#211c16]/78'
+                      amountCents === cents && !customOpen && !justCard ? CHIP_SELECTED : CHIP_IDLE
                     }`}
                   >
                     ${cents / 100}
                   </button>
                 ))}
                 {customOpen && !justCard ? (
-                  <label className="flex min-h-9 items-center justify-center gap-1 rounded-[5px] bg-[#211c16]/7 px-2 py-1.5 font-display text-[14px] text-[#211c16]/82 shadow-[0_-1px_0_rgba(33,28,22,0.28)_inset]">
-                    <span className="text-[#211c16]/48">$</span>
+                  <label className={`flex min-h-9 items-center justify-center gap-1 rounded-[5px] px-2 py-1.5 font-display text-[14px] ${CHIP_SELECTED}`}>
+                    <span className="text-[#211c16]/55">$</span>
                     <input
                       ref={customInputRef}
                       inputMode="decimal"
@@ -358,9 +369,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
                 onClick={selectJustCard}
                 aria-pressed={justCard}
                 className={`mx-auto block min-h-8 rounded-[5px] border border-transparent px-4 py-1.5 font-display text-[14px] transition-colors ${
-                  justCard
-                    ? 'bg-[#211c16]/7 text-[#211c16]/82 shadow-[0_-1px_0_rgba(33,28,22,0.28)_inset]'
-                    : 'text-[#211c16]/56 hover:bg-[#211c16]/5 hover:text-[#211c16]/78'
+                  justCard ? CHIP_SELECTED : CHIP_IDLE
                 }`}
               >
                 Just the card
