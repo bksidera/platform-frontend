@@ -2,7 +2,6 @@ import { motion, useReducedMotion } from 'framer-motion'
 import type { MouseEvent } from 'react'
 import type { Contribution } from './types'
 import type { ViewerRole } from './viewer'
-import { SupportArtifact } from './SupportArtifact'
 
 interface Props {
   cards: Contribution[]
@@ -16,98 +15,34 @@ interface Props {
   onOpen: (c: Contribution, opener: HTMLElement) => void
 }
 
-type BasinItem = {
+type MoundTier = 'foreground' | 'midground' | 'background'
+type MoundShape = 'full' | 'back' | 'sliver'
+
+type MoundItem = {
   card: Contribution
-  kind: 'mini' | 'tile' | 'photo' | 'back' | 'sliver'
+  tier: MoundTier
+  shape: MoundShape
   size: number
   x: number
   y: number
   rotate: number
   opacity: number
   z: number
+  tone: number
 }
 
-const BASE_LAYOUT_SEED = 'living-frame-foot-gather-v1'
-
-type SlotKind = BasinItem['kind'] | 'auto'
-
-type HeapSlot = {
+type Slot = {
+  tier: MoundTier
+  shape?: MoundShape
   x: number
   y: number
   rotate: number
-  scale: number
   z: number
-  kind: SlotKind
   opacity?: number
 }
 
-const FALLBACK_SLOT: HeapSlot = { x: 0, y: 54, rotate: 0, scale: 0.7, z: 1, kind: 'auto' }
-
-const INTIMATE_SLOTS: HeapSlot[] = [
-  { x: 0, y: 44, rotate: -2.1, scale: 0.92, z: 40, kind: 'mini' },
-  { x: -0.17, y: 50, rotate: 2.4, scale: 0.84, z: 35, kind: 'mini' },
-  { x: 0.17, y: 50, rotate: -1.4, scale: 0.84, z: 34, kind: 'mini' },
-  { x: -0.04, y: 63, rotate: 3.1, scale: 0.8, z: 38, kind: 'mini' },
-  { x: 0.05, y: 34, rotate: -3.2, scale: 0.76, z: 26, kind: 'auto', opacity: 0.96 },
-]
-
-const SMALL_HEAP_SLOTS: HeapSlot[] = [
-  { x: -0.34, y: 54, rotate: -4.2, scale: 0.5, z: 10, kind: 'back', opacity: 0.78 },
-  { x: -0.19, y: 42, rotate: 3.3, scale: 0.58, z: 12, kind: 'auto', opacity: 0.86 },
-  { x: 0.04, y: 36, rotate: -2.1, scale: 0.62, z: 14, kind: 'auto', opacity: 0.9 },
-  { x: 0.26, y: 47, rotate: 3.8, scale: 0.52, z: 13, kind: 'back', opacity: 0.82 },
-  { x: -0.28, y: 73, rotate: 2.5, scale: 0.68, z: 24, kind: 'auto' },
-  { x: -0.08, y: 68, rotate: -2.8, scale: 0.8, z: 35, kind: 'mini' },
-  { x: 0.15, y: 70, rotate: 2.1, scale: 0.78, z: 34, kind: 'mini' },
-  { x: 0.34, y: 76, rotate: -3.5, scale: 0.62, z: 22, kind: 'auto' },
-  { x: -0.19, y: 88, rotate: -1.3, scale: 0.55, z: 18, kind: 'sliver', opacity: 0.78 },
-  { x: 0.02, y: 89, rotate: 3.6, scale: 0.88, z: 45, kind: 'mini' },
-  { x: 0.22, y: 87, rotate: -2.3, scale: 0.54, z: 17, kind: 'sliver', opacity: 0.78 },
-  { x: -0.01, y: 55, rotate: 1.2, scale: 0.5, z: 9, kind: 'back', opacity: 0.7 },
-]
-
-const MEDIUM_HEAP_SLOTS: HeapSlot[] = [
-  { x: -0.4, y: 54, rotate: -4.8, scale: 0.44, z: 7, kind: 'back', opacity: 0.62 },
-  { x: -0.26, y: 39, rotate: 4.4, scale: 0.5, z: 8, kind: 'sliver', opacity: 0.7 },
-  { x: -0.12, y: 32, rotate: -2.8, scale: 0.5, z: 9, kind: 'auto', opacity: 0.76 },
-  { x: 0.1, y: 34, rotate: 2.6, scale: 0.5, z: 10, kind: 'back', opacity: 0.68 },
-  { x: 0.28, y: 44, rotate: -4.1, scale: 0.5, z: 11, kind: 'auto', opacity: 0.78 },
-  { x: 0.42, y: 59, rotate: 3.6, scale: 0.43, z: 7, kind: 'sliver', opacity: 0.62 },
-  { x: -0.34, y: 73, rotate: 2.5, scale: 0.56, z: 18, kind: 'auto' },
-  { x: -0.18, y: 66, rotate: -3.4, scale: 0.66, z: 26, kind: 'auto' },
-  { x: 0.02, y: 63, rotate: 1.8, scale: 0.78, z: 34, kind: 'mini' },
-  { x: 0.22, y: 69, rotate: -2.6, scale: 0.62, z: 24, kind: 'auto' },
-  { x: 0.37, y: 78, rotate: 4.2, scale: 0.52, z: 20, kind: 'sliver', opacity: 0.72 },
-  { x: -0.29, y: 91, rotate: -2.2, scale: 0.5, z: 16, kind: 'sliver', opacity: 0.64 },
-  { x: -0.11, y: 91, rotate: 2.4, scale: 0.78, z: 42, kind: 'mini' },
-  { x: 0.1, y: 92, rotate: -1.7, scale: 0.76, z: 43, kind: 'mini' },
-  { x: 0.28, y: 91, rotate: 3.1, scale: 0.48, z: 15, kind: 'back', opacity: 0.62 },
-]
-
-const DENSE_HEAP_SLOTS: HeapSlot[] = [
-  { x: -0.46, y: 53, rotate: -5.4, scale: 0.36, z: 2, kind: 'sliver', opacity: 0.55 },
-  { x: -0.36, y: 40, rotate: 4.6, scale: 0.42, z: 4, kind: 'back', opacity: 0.58 },
-  { x: -0.25, y: 31, rotate: -3.8, scale: 0.42, z: 5, kind: 'auto', opacity: 0.66 },
-  { x: -0.12, y: 27, rotate: 2.7, scale: 0.42, z: 6, kind: 'sliver', opacity: 0.62 },
-  { x: 0.02, y: 27, rotate: -1.9, scale: 0.44, z: 7, kind: 'back', opacity: 0.6 },
-  { x: 0.16, y: 31, rotate: 3.7, scale: 0.42, z: 8, kind: 'auto', opacity: 0.66 },
-  { x: 0.3, y: 39, rotate: -4.5, scale: 0.4, z: 5, kind: 'back', opacity: 0.58 },
-  { x: 0.43, y: 54, rotate: 5, scale: 0.36, z: 3, kind: 'sliver', opacity: 0.55 },
-  { x: -0.41, y: 71, rotate: 3.4, scale: 0.44, z: 13, kind: 'auto', opacity: 0.78 },
-  { x: -0.28, y: 62, rotate: -2.9, scale: 0.5, z: 17, kind: 'auto', opacity: 0.84 },
-  { x: -0.14, y: 57, rotate: 2.2, scale: 0.52, z: 18, kind: 'photo', opacity: 0.86 },
-  { x: 0, y: 55, rotate: -2.4, scale: 0.54, z: 19, kind: 'back', opacity: 0.8 },
-  { x: 0.15, y: 58, rotate: 2.8, scale: 0.52, z: 20, kind: 'auto', opacity: 0.86 },
-  { x: 0.29, y: 64, rotate: -3.4, scale: 0.48, z: 16, kind: 'auto', opacity: 0.82 },
-  { x: 0.41, y: 74, rotate: 3.8, scale: 0.4, z: 12, kind: 'sliver', opacity: 0.68 },
-  { x: -0.34, y: 92, rotate: -3.2, scale: 0.45, z: 14, kind: 'sliver', opacity: 0.7 },
-  { x: -0.2, y: 89, rotate: 2.5, scale: 0.64, z: 32, kind: 'auto' },
-  { x: -0.05, y: 86, rotate: -1.8, scale: 0.78, z: 45, kind: 'mini' },
-  { x: 0.12, y: 89, rotate: 2.2, scale: 0.74, z: 44, kind: 'mini' },
-  { x: 0.27, y: 92, rotate: -2.8, scale: 0.58, z: 30, kind: 'auto' },
-  { x: -0.11, y: 105, rotate: 3.1, scale: 0.68, z: 46, kind: 'mini' },
-  { x: 0.08, y: 106, rotate: -2.5, scale: 0.66, z: 43, kind: 'mini' },
-]
+const BASE_LAYOUT_SEED = 'living-frame-v4-mound'
+const CARD_ASPECT = 1.05
 
 function stableNumber(seed: string): number {
   let hash = 2166136261
@@ -119,141 +54,276 @@ function stableNumber(seed: string): number {
 }
 
 function firstName(name: string): string {
-  if (name === 'A card was left') return 'A card'
   return name.trim().split(/\s+/)[0] ?? name
 }
 
-function getHeapPlan(count: number, tile: number) {
-  if (count <= 5) {
-    return { widthRatio: 0.44, height: Math.round(tile * 1.18), slots: INTIMATE_SLOTS.slice(0, count) }
-  }
-  if (count <= 12) {
-    return { widthRatio: 0.74, height: Math.round(tile * 1.5), slots: SMALL_HEAP_SLOTS.slice(0, count) }
-  }
-  if (count <= 40) {
-    return { widthRatio: 0.8, height: Math.round(tile * 1.58), slots: MEDIUM_HEAP_SLOTS }
-  }
-  return { widthRatio: 0.92, height: Math.round(tile * 1.72), slots: DENSE_HEAP_SLOTS }
+function cardTime(card: Contribution): number {
+  return new Date(card.createdAt).getTime()
 }
 
-function visibleCards(cards: Contribution[], limit: number): Contribution[] {
-  if (cards.length <= limit) return cards
-
-  const selected = new Map<string, Contribution>()
-  const newestTarget = Math.max(0, limit - 4)
-  cards.slice(-newestTarget).forEach((card) => selected.set(card.id, card))
-
-  const photoCards = cards
-    .filter((card) => card.imageUrl && !selected.has(card.id))
-    .sort((a, b) => stableNumber(`${BASE_LAYOUT_SEED}:photo:${a.id}`) - stableNumber(`${BASE_LAYOUT_SEED}:photo:${b.id}`))
-
-  for (const card of photoCards) {
-    if (selected.size >= limit) break
-    selected.set(card.id, card)
-  }
-
-  const sampled = cards
-    .filter((card) => !selected.has(card.id))
-    .sort((a, b) => stableNumber(`${BASE_LAYOUT_SEED}:sample:${a.id}`) - stableNumber(`${BASE_LAYOUT_SEED}:sample:${b.id}`))
-
-  for (const card of sampled) {
-    if (selected.size >= limit) break
-    selected.set(card.id, card)
-  }
-
-  const selectedIds = new Set(selected.keys())
-  return cards.filter((card) => selectedIds.has(card.id))
+function sortNewest(cards: Contribution[]): Contribution[] {
+  return [...cards].sort((a, b) => cardTime(b) - cardTime(a))
 }
 
-function resolveKind(slotKind: SlotKind, card: Contribution, index: number): BasinItem['kind'] {
-  if (slotKind !== 'auto') return slotKind
-  if (card.imageUrl && index % 2 === 0) return 'photo'
-  return 'tile'
+function foregroundLimit(count: number): number {
+  if (count <= 1) return count
+  if (count <= 5) return 2
+  return 3
 }
 
-function buildBasinItems(cards: Contribution[], tile: number, width: number, heapWidth: number, slots: HeapSlot[]): BasinItem[] {
-  const shown = visibleCards(cards, slots.length)
-  const centerX = width / 2
-  const slotScale = tile / 76
+function foregroundCards(cards: Contribution[], isOwn: (card: Contribution) => boolean): Contribution[] {
+  const limit = foregroundLimit(cards.length)
+  if (limit === 0) return []
 
-  return shown.map((card, index) => {
-    const slot = slots[index % slots.length] ?? FALLBACK_SLOT
-    const kind = resolveKind(slot.kind, card, index)
-    const baseSize =
-      kind === 'mini'
-        ? tile
-        : kind === 'photo'
-          ? tile * 0.74
-          : kind === 'tile'
-            ? tile * 0.58
-            : kind === 'back'
-              ? tile * 0.6
-              : tile * 0.54
+  const newest = sortNewest(cards)
+  const own = newest.filter(isOwn).slice(0, Math.min(2, limit))
+  const selected = new Set(own.map((card) => card.id))
+  const others = newest.filter((card) => !selected.has(card.id)).slice(0, limit - own.length)
+
+  return [...own, ...others].slice(0, limit)
+}
+
+function remainingCards(cards: Contribution[], selected: Contribution[]): Contribution[] {
+  const selectedIds = new Set(selected.map((card) => card.id))
+  return sortNewest(cards).filter((card) => !selectedIds.has(card.id))
+}
+
+function moundWidthRatio(count: number): number {
+  if (count <= 1) return 0.3
+  if (count <= 5) return 0.5
+  if (count <= 12) return 0.5
+  if (count <= 25) return 0.54
+  if (count <= 50) return 0.76
+  return 0.9
+}
+
+function visibleCounts(count: number) {
+  const foreground = foregroundLimit(count)
+  if (count <= foreground) return { foreground, midground: 0, background: 0 }
+  if (count <= 5) return { foreground, midground: count - foreground, background: 0 }
+  if (count <= 12) return { foreground, midground: Math.min(4, count - foreground), background: Math.max(0, count - foreground - 4) }
+  if (count <= 25) return { foreground, midground: Math.min(7, count - foreground), background: Math.min(14, count - foreground - 7) }
+  if (count <= 50) return { foreground, midground: 9, background: 22 }
+  return { foreground, midground: 10, background: 28 }
+}
+
+function generateBackgroundSlots(count: number): Slot[] {
+  const rows = count <= 12 ? 2 : count <= 25 ? 3 : 4
+  const total = visibleCounts(count).background
+  const slots: Slot[] = []
+
+  for (let i = 0; i < total; i += 1) {
+    const row = i % rows
+    const rowIndex = Math.floor(i / rows)
+    const perRow = Math.ceil(total / rows)
+    const t = perRow <= 1 ? 0.5 : rowIndex / (perRow - 1)
+    const rowSpan = 0.94 - row * 0.1
+    const jitterX = ((stableNumber(`${BASE_LAYOUT_SEED}:bgx:${count}:${i}`) % 100) / 100 - 0.5) * 0.035
+    const jitterY = ((stableNumber(`${BASE_LAYOUT_SEED}:bgy:${count}:${i}`) % 100) / 100 - 0.5) * 5
+
+    slots.push({
+      tier: 'background',
+      shape: i % 5 === 0 ? 'sliver' : 'back',
+      x: (t - 0.5) * rowSpan + jitterX,
+      y: 30 + row * 12 + jitterY,
+      rotate: ((stableNumber(`${BASE_LAYOUT_SEED}:bgr:${count}:${i}`) % 120) / 10) - 6,
+      z: 5 + row * 2 + (i % 3),
+      opacity: 0.42 + row * 0.04,
+    })
+  }
+
+  return slots
+}
+
+function generateMidgroundSlots(count: number): Slot[] {
+  const total = visibleCounts(count).midground
+  const slots: Slot[] = []
+  if (total === 0) return slots
+
+  const span = count <= 12 ? 0.58 : count <= 25 ? 0.68 : 0.78
+  for (let i = 0; i < total; i += 1) {
+    const t = total <= 1 ? 0.5 : i / (total - 1)
+    const jitterX = ((stableNumber(`${BASE_LAYOUT_SEED}:midx:${count}:${i}`) % 100) / 100 - 0.5) * 0.045
+    const jitterY = ((stableNumber(`${BASE_LAYOUT_SEED}:midy:${count}:${i}`) % 100) / 100 - 0.5) * 8
+    slots.push({
+      tier: 'midground',
+      shape: 'full',
+      x: (t - 0.5) * span + jitterX,
+      y: 56 + (i % 2) * 12 + jitterY,
+      rotate: ((stableNumber(`${BASE_LAYOUT_SEED}:midr:${count}:${i}`) % 100) / 10) - 5,
+      z: 28 + i,
+      opacity: 0.7,
+    })
+  }
+
+  return slots
+}
+
+function foregroundSlots(count: number): Slot[] {
+  const foreground = foregroundLimit(count)
+  if (foreground === 0) return []
+  if (foreground === 1) {
+    return [{ tier: 'foreground', shape: 'full', x: 0, y: 68, rotate: -1.4, z: 80 }]
+  }
+  if (foreground === 2) {
+    return [
+      { tier: 'foreground', shape: 'full', x: -0.12, y: 75, rotate: -2.2, z: 82 },
+      { tier: 'foreground', shape: 'full', x: 0.12, y: 74, rotate: 2, z: 83 },
+    ]
+  }
+
+  return [
+    { tier: 'foreground', shape: 'full', x: 0, y: 69, rotate: -0.7, z: 86 },
+    { tier: 'foreground', shape: 'full', x: -0.18, y: 88, rotate: -2.6, z: 84 },
+    { tier: 'foreground', shape: 'full', x: 0.18, y: 90, rotate: 2.4, z: 85 },
+  ]
+}
+
+function getMoundPlan(count: number, tile: number, stageWidth: number) {
+  const foregroundSize = tile
+  const midgroundSize = Math.round(foregroundSize * 0.74)
+  const backgroundSize = Math.round(foregroundSize * 0.56)
+  const spread = Math.round(stageWidth * moundWidthRatio(count))
+  const slots = [
+    ...generateBackgroundSlots(count),
+    ...generateMidgroundSlots(count),
+    ...foregroundSlots(count),
+  ]
+  const height = count <= 1 ? Math.round(tile * 1.48) : count <= 12 ? Math.round(tile * 1.72) : Math.round(tile * 1.86)
+
+  return { foregroundSize, midgroundSize, backgroundSize, spread, slots, height }
+}
+
+function buildMoundItems(cards: Contribution[], tile: number, stageWidth: number, isOwn: (card: Contribution) => boolean): MoundItem[] {
+  const count = cards.length
+  const plan = getMoundPlan(count, tile, stageWidth)
+  const foreground = foregroundCards(cards, isOwn)
+  const remaining = remainingCards(cards, foreground)
+  const counts = visibleCounts(count)
+  const midground = remaining.slice(0, counts.midground)
+  const background = remaining.slice(counts.midground, counts.midground + counts.background)
+  const tierCards = [...background, ...midground, ...foreground]
+
+  return tierCards.map((card, index) => {
+    const slot = plan.slots[index]
+    const tier = slot?.tier ?? 'background'
+    const size =
+      tier === 'foreground'
+        ? plan.foregroundSize
+        : tier === 'midground'
+          ? plan.midgroundSize
+          : plan.backgroundSize
+    const halfWidth = size / 2
+    const x = Math.max(halfWidth + 4, Math.min(stageWidth - halfWidth - 4, stageWidth / 2 + (slot?.x ?? 0) * plan.spread))
 
     return {
       card,
-      kind,
-      size: Math.round(baseSize * slot.scale),
-      x: Math.round(centerX + slot.x * heapWidth),
-      y: Math.round(slot.y * slotScale),
-      rotate: slot.rotate,
-      opacity: slot.opacity ?? 1,
-      z: slot.z,
+      tier,
+      shape: slot?.shape ?? 'full',
+      size,
+      x: Math.round(x),
+      y: Math.round((slot?.y ?? 40) * (tile / 76)),
+      rotate: slot?.rotate ?? 0,
+      opacity: slot?.opacity ?? 1,
+      z: slot?.z ?? index,
+      tone: stableNumber(`${BASE_LAYOUT_SEED}:tone:${card.id}`) % 4,
     }
   })
 }
 
-function BasinTile({
+function MoundCard({
   item,
   onClick,
 }: {
-  item: BasinItem
+  item: MoundItem
   onClick: (event: MouseEvent<HTMLButtonElement>) => void
 }) {
-  const { card, size, kind } = item
-  const name = firstName(card.displayName)
-  const hasPhoto = kind === 'photo' && !!card.imageUrl
-  const isSliver = kind === 'sliver'
-  const isBack = kind === 'back'
+  const { card, size, tier, shape, tone } = item
+  const hasPhoto = !!card.imageUrl
+  const hasNote = !!card.note
+  const readable = tier === 'foreground'
+  const midground = tier === 'midground'
+  const height = Math.round(size * (shape === 'sliver' ? 0.38 : CARD_ASPECT))
+  const paperTone = [
+    'rgba(242,235,222,0.99)',
+    'rgba(236,227,210,0.99)',
+    'rgba(231,222,204,0.98)',
+    'rgba(224,213,193,0.98)',
+  ][tone] ?? 'rgba(242,235,222,0.99)'
+  const contentOpacity = readable ? 1 : midground ? 0.28 : 0
 
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={`Card from ${card.displayName}`}
-      className="pointer-events-auto relative overflow-hidden rounded-[5px] border border-[#d4c8b2]/55 bg-[#eee6d7] text-left text-[#2a251e]
-                 shadow-[0_1px_0_rgba(255,255,255,0.52)_inset,0_2px_5px_rgba(0,0,0,0.18),0_10px_20px_-12px_rgba(0,0,0,0.75)]
-                 transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-parchment/70"
+      className="pointer-events-auto relative overflow-hidden rounded-[7px] border border-[#d1c2a8]/60 text-left text-[#2a251e]
+                 focus:outline-none focus:ring-2 focus:ring-parchment/70"
       style={{
         width: size,
-        height: Math.round(size * (isSliver ? 0.46 : hasPhoto ? 1.05 : 0.74)),
-        background:
-          'linear-gradient(145deg, rgba(243,236,222,0.98), rgba(231,222,204,0.97) 62%, rgba(218,207,185,0.94))',
+        height,
+        opacity: item.opacity,
+        background: `linear-gradient(145deg, ${paperTone}, rgba(221,209,187,0.96))`,
+        boxShadow:
+          tier === 'foreground'
+            ? '0 1px 0 rgba(255,255,255,0.52) inset, 0 12px 24px rgba(0,0,0,0.42), 0 2px 5px rgba(0,0,0,0.24)'
+            : tier === 'midground'
+              ? '0 1px 0 rgba(255,255,255,0.35) inset, 0 7px 14px rgba(0,0,0,0.38)'
+              : '0 3px 8px rgba(0,0,0,0.44)',
+        filter:
+          tier === 'foreground'
+            ? 'none'
+            : tier === 'midground'
+              ? 'brightness(0.78) saturate(0.8)'
+              : 'brightness(0.58) saturate(0.62)',
       }}
     >
-      {hasPhoto ? (
-        <span className="block h-full w-full p-[3px]">
-          <img
-            src={card.imageUrl}
-            alt=""
-            className="h-full w-full rounded-[2px] object-cover opacity-95 saturate-[0.78] contrast-[0.94] sepia-[0.08]"
-            draggable={false}
-          />
+      {shape !== 'full' ? (
+        <span className="flex h-full flex-col justify-between px-2 py-2" aria-hidden>
+          <span className="block h-px w-4/5 bg-[#2a251e]/10" />
+          <span className="block h-px w-2/3 bg-[#2a251e]/8" />
+          <span className="block h-px w-1/2 bg-[#2a251e]/7" />
         </span>
-      ) : isBack || isSliver ? (
-        <span className="flex h-full flex-col justify-between px-1.5 py-1.5">
-          <span className="block h-px w-4/5 bg-[#2a251e]/8" />
-          <span className="block h-px w-2/3 bg-[#2a251e]/7" />
-          <span className="block h-px w-1/2 bg-[#2a251e]/6" />
+      ) : hasPhoto ? (
+        <span className="block h-full w-full p-[7%]">
+          <span className="relative block h-full w-full overflow-hidden rounded-[4px] bg-[#efe6d4] shadow-[0_1px_2px_rgba(0,0,0,0.2)_inset]">
+            <img
+              src={card.imageUrl}
+              alt=""
+              draggable={false}
+              className="h-full w-full object-cover opacity-90 saturate-[0.48] contrast-[0.88] sepia-[0.16]"
+            />
+            {readable && (
+              <span className="absolute inset-x-0 bottom-0 bg-[#efe6d4]/88 px-1.5 py-1">
+                <span className="block truncate font-display text-[11px] leading-none text-[#2a251e]/76">
+                  {firstName(card.displayName)}
+                </span>
+              </span>
+            )}
+          </span>
         </span>
       ) : (
-        <span className="flex h-full flex-col justify-between px-1.5 py-1.5">
-          <span className="flex items-start justify-between gap-1">
-            <span className="max-w-[82%] truncate font-display text-[10px] leading-none text-[#2a251e]/72">
-              {name}
-            </span>
+        <span className="flex h-full flex-col px-[12%] py-[12%]" style={{ opacity: contentOpacity }}>
+          <span
+            className="truncate font-display leading-none text-[#2a251e]/80"
+            style={{ fontSize: readable ? Math.max(12, size * 0.14) : Math.max(9, size * 0.13) }}
+          >
+            {firstName(card.displayName)}
           </span>
-          <span className="block h-px w-3/4 bg-[#2a251e]/10" />
+          {hasNote && (
+            <span
+              className="mt-auto block overflow-hidden font-display leading-tight text-[#2a251e]/70"
+              style={{
+                fontSize: readable ? Math.max(11, size * 0.125) : Math.max(8, size * 0.1),
+                display: '-webkit-box',
+                WebkitBoxOrient: 'vertical',
+                WebkitLineClamp: readable ? 3 : 2,
+              }}
+            >
+              {card.note}
+            </span>
+          )}
+          {!hasNote && <span className="mt-auto block h-px w-2/3 bg-[#2a251e]/12" />}
         </span>
       )}
     </button>
@@ -261,15 +331,13 @@ function BasinTile({
 }
 
 function LeaveYoursCard({
-  count,
   tile,
   onOpen,
 }: {
-  count: number
   tile: number
   onOpen: () => void
 }) {
-  const size = count === 0 ? Math.round(tile * 1.28) : Math.round(tile * 0.92)
+  const size = tile
 
   return (
     <motion.button
@@ -277,18 +345,18 @@ function LeaveYoursCard({
       type="button"
       onClick={onOpen}
       aria-label="Leave a card"
-      className="group pointer-events-auto flex flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[7px] border border-[#d8ceb9]/75 p-3
-                 text-[#211c16] shadow-[0_1px_0_rgba(255,255,255,0.62)_inset,0_4px_10px_rgba(0,0,0,0.22),0_18px_34px_-18px_rgba(0,0,0,0.82)]
+      className="pointer-events-auto flex flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[7px] border border-[#d8ceb9]/75 p-3
+                 text-[#211c16] shadow-[0_1px_0_rgba(255,255,255,0.62)_inset,0_7px_16px_rgba(0,0,0,0.28)]
                  transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-parchment/70"
       style={{
         width: size,
-        height: size,
+        height: Math.round(size * CARD_ASPECT),
         background:
-          'linear-gradient(145deg, rgba(243,236,222,0.99), rgba(230,221,203,0.97) 58%, rgba(219,208,187,0.95))',
+          'linear-gradient(145deg, rgba(244,237,224,0.99), rgba(231,222,204,0.98) 58%, rgba(220,209,188,0.96))',
       }}
     >
-      <span className="font-display text-[17px] leading-tight">Leave yours</span>
-      <span className="text-[30px] leading-none opacity-58 transition-opacity group-hover:opacity-80">+</span>
+      <span className="font-display text-[15px] leading-tight text-[#3b342b]/88">Leave yours</span>
+      <span className="text-[23px] font-light leading-none text-[#6e6558]/74">+</span>
     </motion.button>
   )
 }
@@ -296,7 +364,6 @@ function LeaveYoursCard({
 export function ContributionCardRail({
   cards,
   tile,
-  viewerRole,
   isOwn,
   justPlacedId,
   isGathering = false,
@@ -307,34 +374,23 @@ export function ContributionCardRail({
   const reducedMotion = useReducedMotion()
   const count = cards.length
   const compact = tile < 84
-  const width = compact ? 338 : 380
-  const heapPlan = getHeapPlan(count, tile)
-  const heapWidth = Math.round(width * heapPlan.widthRatio)
-  const items = buildBasinItems(cards, tile, width, heapWidth, heapPlan.slots)
+  const stageWidth = compact ? 334 : 380
+  const plan = getMoundPlan(count, tile, stageWidth)
+  const items = buildMoundItems(cards, tile, stageWidth, isOwn)
 
   return (
     <div className="pointer-events-none flex flex-col items-center" aria-label="Cards gathered with the artist">
       {count > 0 && (
         <motion.div
-          className="relative"
-          style={{ width, height: heapPlan.height }}
+          className="relative overflow-hidden"
+          style={{ width: stageWidth, height: plan.height }}
           animate={{ opacity: isGathering ? 0.5 : 1, scale: isGathering && !reducedMotion ? 0.975 : 1 }}
           transition={{ duration: reducedMotion ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }}
         >
           <div
             aria-hidden
-            className="absolute left-1/2 bottom-0 h-16 rounded-full bg-black/30 blur-2xl"
-            style={{ width: Math.min(width * 0.82, 430), transform: 'translateX(-50%)' }}
-          />
-          <div
-            aria-hidden
-            className="absolute left-1/2 bottom-5 h-20 rounded-full"
-            style={{
-              width: Math.min(width * 0.78, 390),
-              transform: 'translateX(-50%)',
-              background:
-                'radial-gradient(ellipse at center, rgba(18,14,10,0.19) 0%, rgba(18,14,10,0.09) 43%, rgba(18,14,10,0) 76%)',
-            }}
+            className="absolute left-1/2 bottom-0 h-14 rounded-full bg-black/24 blur-2xl"
+            style={{ width: Math.min(stageWidth * 0.86, 360), transform: 'translateX(-50%)' }}
           />
 
           {items.map((item) => {
@@ -344,39 +400,26 @@ export function ContributionCardRail({
               left: item.x,
               top: item.y,
               marginLeft: -item.size / 2,
-              marginTop: -item.size / 2,
+              marginTop: -(item.size * CARD_ASPECT) / 2,
               zIndex: ownCard ? 900 + item.z : item.z,
             }
 
             return (
               <motion.div
                 key={item.card.id}
-                initial={isNew && !reducedMotion ? { opacity: 0, y: 30, scale: 0.96, rotate: item.rotate * 0.4 } : false}
+                initial={isNew && !reducedMotion ? { opacity: 0, y: 70, scale: 0.84, rotate: item.rotate * 0.25 } : false}
                 animate={{
                   opacity: 1,
-                  x: isGathering && !reducedMotion ? width / 2 - item.x : 0,
-                  y: isGathering && !reducedMotion ? heapPlan.height * 0.58 - item.y : 0,
+                  x: isGathering && !reducedMotion ? stageWidth / 2 - item.x : 0,
+                  y: isGathering && !reducedMotion ? plan.height * 0.62 - item.y : 0,
                   rotate: isGathering && !reducedMotion ? item.rotate * 0.18 : item.rotate,
                   scale: isGathering && !reducedMotion ? 0.72 : 1,
                 }}
-                transition={{ duration: reducedMotion ? 0 : 0.38, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: reducedMotion ? 0 : isNew ? 0.56 : 0.38, ease: [0.22, 1, 0.36, 1] }}
                 className="absolute"
                 style={sharedStyle}
               >
-                {item.kind === 'mini' ? (
-                  <SupportArtifact
-                    contribution={item.card}
-                    size={item.size}
-                    viewerRole={viewerRole}
-                    isOwn={ownCard}
-                    onClick={(event) => onOpen(item.card, event.currentTarget)}
-                  />
-                ) : (
-                  <BasinTile
-                    item={item}
-                    onClick={(event) => onOpen(item.card, event.currentTarget)}
-                  />
-                )}
+                <MoundCard item={item} onClick={(event) => onOpen(item.card, event.currentTarget)} />
               </motion.div>
             )
           })}
@@ -385,15 +428,15 @@ export function ContributionCardRail({
 
       {!hideLeaveYours && !isGathering && (
         <motion.div
-          className={count > 5 ? 'relative z-10 mt-7 md:mt-7' : count > 0 ? 'relative z-10 mt-6 md:mt-6' : 'relative z-10 mt-0'}
+          className={count > 0 ? 'relative z-10 mt-5 md:mt-5' : 'relative z-10 mt-0'}
           animate={{
             opacity: isGathering ? 0 : 1,
-            rotate: count === 0 ? -1 : 2.5,
+            rotate: 0,
             scale: isGathering && !reducedMotion ? 0.96 : 1,
           }}
           transition={{ duration: reducedMotion ? 0 : 0.38, ease: [0.22, 1, 0.36, 1] }}
         >
-          <LeaveYoursCard count={count} tile={tile} onOpen={onLeaveYours} />
+          <LeaveYoursCard tile={tile} onOpen={onLeaveYours} />
         </motion.div>
       )}
     </div>

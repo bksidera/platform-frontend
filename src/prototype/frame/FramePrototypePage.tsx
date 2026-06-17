@@ -46,6 +46,13 @@ export function FramePrototypePage() {
     return () => mq.removeEventListener('change', onChange)
   }, [])
 
+  useEffect(() => {
+    if (!confirmation) return
+
+    const timeout = window.setTimeout(() => setConfirmation(null), 3000)
+    return () => window.clearTimeout(timeout)
+  }, [confirmation])
+
   const cards = useMemo(
     () => [...seedSupport(seedCount), ...userContribs],
     [seedCount, userContribs],
@@ -83,8 +90,8 @@ export function FramePrototypePage() {
       setUserContribs((prev) => [...prev, created])
       setCardKey((k) => k + 1)
       setComposerOpen(false)
-      if (draft.amountCents) setJustPlacedId(created.id)
-      setTimeout(() => setConfirmation({ kind: draft.amountCents ? 'paid' : 'note' }), draft.amountCents ? 800 : 350)
+      setJustPlacedId(created.id)
+      setTimeout(() => setConfirmation({ kind: draft.amountCents ? 'paid' : 'note' }), draft.amountCents ? 760 : 520)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong.')
     } finally {
@@ -114,14 +121,11 @@ export function FramePrototypePage() {
       />
 
       <div className="relative max-w-3xl mx-auto px-7 md:px-12 pb-12 flex flex-col items-center">
-        {/* The plaque: identity and evidence, no verbs. */}
+        {/* Identity only; the mound carries the evidence. */}
         <header className="text-center pt-12 md:pt-7 pb-5">
           <h1 className="font-display text-2xl text-parchment/95 leading-none">{CREATOR.name}</h1>
           <p className="text-[11px] tracking-[0.14em] text-parchment/50 mt-1.5">
             {CREATOR.context}
-          </p>
-          <p className="mt-3 font-display text-base text-parchment/82">
-            Cards left with {CREATOR.name.split(' ')[0]}
           </p>
         </header>
 
@@ -130,7 +134,7 @@ export function FramePrototypePage() {
           <LivingFrame imageUrl={CREATOR.imageUrl} />
 
           {/* Gathered paper presence, readable only when picked up. */}
-          <div className={`relative z-10 ${cards.length > 0 ? '-mt-8 md:-mt-10' : 'mt-4'}`}>
+          <div className={`relative z-10 ${cards.length > 0 ? '-mt-7 md:-mt-8' : 'mt-4'}`}>
             <ContributionCardRail
               cards={cards}
               tile={tile}
