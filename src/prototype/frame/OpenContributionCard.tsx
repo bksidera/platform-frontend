@@ -37,7 +37,10 @@ const cardStyle = {
 // dark "Place card" button (the only truly dark object).
 const CHIP_SELECTED =
   'bg-[#d6c6a4] text-[#211c16] font-medium shadow-[inset_0_1px_2px_rgba(33,28,22,0.18)]'
-const CHIP_IDLE = 'text-[#211c16]/56 hover:bg-[#211c16]/5 hover:text-[#211c16]/78'
+// The resting "empty cup": the same gold chip container, barely there, so the
+// row reads as "pick one" before anything is chosen — without pre-selection.
+const CHIP_IDLE =
+  'bg-[#d6c6a4]/35 text-[#211c16]/58 hover:bg-[#d6c6a4]/60 hover:text-[#211c16]/80'
 
 function isMobileViewport() {
   return window.matchMedia('(max-width: 767px)').matches
@@ -148,7 +151,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
   const helperText = !hasStartedCard
     ? 'Add your name or note to begin.'
     : !hasCompletionChoice
-      ? 'Add an amount, or just the card.'
+      ? 'Select an amount or just the card.'
       : null
   const placeButtonActive = canPlace && !busy
   const {
@@ -313,7 +316,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
             <div className="mb-2.5">
               <span className="block text-[11px] font-medium text-[#211c16]/50">Amount</span>
               <p className="mt-0.5 text-[11px] leading-snug text-[#211c16]/50">
-                Only the creator sees the amount.
+                Add one if you'd like — only the creator sees it.
               </p>
             </div>
             <div className="space-y-1.5">
@@ -357,7 +360,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
                     onPointerDown={blurActiveTextField}
                     onClick={openCustom}
                     aria-pressed={false}
-                    className="min-h-9 rounded-[5px] border border-transparent px-2 py-1.5 font-display text-[14px] text-[#211c16]/56 transition-colors hover:bg-[#211c16]/5 hover:text-[#211c16]/78"
+                    className={`min-h-9 rounded-[5px] border border-transparent px-2 py-1.5 font-display text-[14px] transition-colors ${CHIP_IDLE}`}
                   >
                     Other
                   </button>
