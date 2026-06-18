@@ -151,7 +151,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
   const helperText = !hasStartedCard
     ? 'Add your name or note to begin.'
     : !hasCompletionChoice
-      ? 'Select an amount or just the card.'
+      ? 'Select an amount or "just the card" to move forward.'
       : null
   const placeButtonActive = canPlace && !busy
   const {
