@@ -190,6 +190,21 @@ export function CardStackViewer({
             />
           </motion.article>
         </AnimatePresence>
+
+        {/* Click-to-riffle zones over the card's left/right edges — an
+            addition to swipe; the center stays free for swipe and reading. */}
+        <button
+          type="button"
+          aria-label="Previous card"
+          onClick={() => riffle(-1)}
+          className="absolute inset-y-0 left-0 z-20 w-[26%] cursor-pointer focus:outline-none"
+        />
+        <button
+          type="button"
+          aria-label="Next card"
+          onClick={() => riffle(1)}
+          className="absolute inset-y-0 right-0 z-20 w-[26%] cursor-pointer focus:outline-none"
+        />
         </div>
 
         {/* Whisper-quiet "set down" — usability insurance, never chrome. */}
