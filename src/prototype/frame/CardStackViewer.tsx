@@ -14,6 +14,23 @@ interface Props {
   onClose: () => void
 }
 
+// One lit material. The front card at full light; the stack beneath is this
+// same paper, pushed into shadow by a brightness filter — never by alpha.
+const PAPER =
+  'linear-gradient(145deg, rgba(244,237,224,0.99), rgba(231,222,204,0.98) 58%, rgba(219,208,187,0.96))'
+
+// Weighted, damped — cards have mass. No spring, no bounce.
+const WEIGHTED = [0.32, 0, 0.18, 1] as const
+
+// The opaque-paper cards sitting beneath the front card, receding into shadow.
+// Dimmed enough to read as "deeper in the dark room," but still warm paper —
+// never charcoal slabs.
+const BACK_LAYERS = [
+  { y: 13, scale: 0.965, rotate: -1.6, brightness: 0.9 },
+  { y: 25, scale: 0.935, rotate: 2.1, brightness: 0.8 },
+  { y: 37, scale: 0.905, rotate: -2.6, brightness: 0.7 },
+]
+
 export function buildStackOrder(
   cards: Contribution[],
   entryCardId: string | null,
@@ -50,7 +67,7 @@ export function CardStackViewer({
   onClose,
 }: Props) {
   const reducedMotion = useReducedMotion()
-  const closeRef = useRef<HTMLButtonElement | null>(null)
+  const setDownRef = useRef<HTMLButtonElement | null>(null)
   const creatorFirst = creatorName.split(' ')[0] ?? creatorName
   const orderedCards = useMemo(
     () => buildStackOrder(cards, entryCardId, ownCardIds),
@@ -59,42 +76,46 @@ export function CardStackViewer({
   const [index, setIndex] = useState(0)
   const current = orderedCards[index]
   const count = orderedCards.length
-  const canGoPrevious = index > 0
-  const canGoNext = index < count - 1
+
+  // The stack is continuous — riffling cycles, with no first/last and no end.
+  const riffle = (step: number) =>
+    setIndex((value) => (count > 0 ? (value + step + count) % count : 0))
 
   useEffect(() => {
     setIndex(0)
   }, [entryCardId])
 
   useEffect(() => {
-    closeRef.current?.focus()
+    setDownRef.current?.focus()
   }, [])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
-      if (event.key === 'ArrowLeft') setIndex((value) => Math.max(0, value - 1))
-      if (event.key === 'ArrowRight') setIndex((value) => Math.min(count - 1, value + 1))
+      if (event.key === 'ArrowLeft') riffle(-1)
+      if (event.key === 'ArrowRight') riffle(1)
     }
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [count, onClose])
 
   if (!current) return null
 
-  const goPrevious = () => setIndex((value) => Math.max(0, value - 1))
-  const goNext = () => setIndex((value) => Math.min(count - 1, value + 1))
   const onDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    if (info.offset.y > 86 || info.velocity.y > 620) {
+    // Flick down: set the card back onto the stack.
+    if (info.offset.y > 96 || info.velocity.y > 660) {
       onClose()
       return
     }
-
-    if (info.offset.x < -68 || info.velocity.x < -520) goNext()
-    if (info.offset.x > 68 || info.velocity.x > 520) goPrevious()
+    // Thumb-riffle: a horizontal swipe sends the front card settling back and
+    // draws the neighbor up into focus. Continuous in both directions.
+    if (info.offset.x < -64 || info.velocity.x < -520) riffle(1)
+    else if (info.offset.x > 64 || info.velocity.x > 520) riffle(-1)
   }
 
+  const cardName = current.visibility === 'private' ? 'a private giver' : current.displayName
   const labelDate = new Date(current.createdAt).toLocaleDateString(undefined, {
     month: 'long',
     day: 'numeric',
@@ -102,66 +123,63 @@ export function CardStackViewer({
 
   return (
     <motion.div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/58 px-5 py-10"
+      className="fixed inset-0 z-40 flex items-center justify-center px-6 py-12 backdrop-blur-lg"
       role="dialog"
       aria-modal="true"
-      aria-label={`Card ${index + 1} of ${count}. Left with ${creatorFirst} on ${labelDate}.`}
+      aria-label={`Card from ${cardName}. Left with ${creatorFirst} on ${labelDate}.`}
+      style={{ background: 'rgba(12, 10, 7, 0.46)' }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: reducedMotion ? 0 : 0.26, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: reducedMotion ? 0 : 0.3, ease: WEIGHTED }}
       onMouseDown={(event) => {
+        // Tap-away on the dark room sets the card down.
         if (event.target === event.currentTarget) onClose()
       }}
     >
-      <div className="relative" style={{ width: 'min(88vw, 390px)' }}>
-        <button
-          ref={closeRef}
-          type="button"
-          onClick={onClose}
-          aria-label="Close card stack"
-          className="absolute -right-1 -top-12 z-20 h-9 w-9 rounded-full border border-white/15 bg-[#1a160f]/80 text-parchment/70 shadow-[0_12px_30px_rgba(0,0,0,0.32)] transition hover:text-parchment focus:outline-none focus:ring-2 focus:ring-parchment/70"
-        >
-          ×
-        </button>
-
-        <div aria-hidden className="absolute inset-0">
-          {[0, 1, 2].map((layer) => (
-            <motion.div
-              key={`${current.id}-layer-${layer}`}
-              className="absolute inset-0 rounded-[12px] border border-[#d4c8b2]/45 bg-[#e7dcc7] shadow-[0_12px_34px_-18px_rgba(0,0,0,0.75)]"
-              initial={
-                reducedMotion
-                  ? false
-                  : { opacity: 0, y: 22 + layer * 7, x: layer % 2 === 0 ? -8 : 8, rotate: layer % 2 === 0 ? -2 : 2 }
-              }
-              animate={{
-                opacity: 0.42 - layer * 0.1,
-                y: 10 + layer * 9,
-                x: layer % 2 === 0 ? -7 - layer * 2 : 7 + layer * 2,
-                rotate: layer % 2 === 0 ? -1.8 - layer * 0.5 : 1.8 + layer * 0.5,
-              }}
-              transition={{ duration: reducedMotion ? 0 : 0.34, ease: [0.22, 1, 0.36, 1] }}
+      <div style={{ width: 'min(82vw, 350px)' }}>
+        {/* The held stack: front card + the opaque paper cards beneath it,
+            scoped to one box so the beneath-cards match the card's footprint. */}
+        <div className="relative">
+        {/* The stack beneath: opaque warm paper, dimmed into shadow by light,
+            never by alpha. Tapping the exposed paper sets the card down too. */}
+        {BACK_LAYERS.map((layer, i) => (
+          <motion.div
+            key={`${current.id}-beneath-${i}`}
+            aria-hidden
+            onMouseDown={onClose}
+            className="absolute inset-0 rounded-[12px] border border-[#cbbd9f]/45"
+            style={{ background: PAPER, filter: `brightness(${layer.brightness}) saturate(1.12) sepia(0.08)` }}
+            initial={
+              reducedMotion
+                ? false
+                : { opacity: 1, y: layer.y + 8, scale: layer.scale, rotate: layer.rotate }
+            }
+            animate={{ opacity: 1, y: layer.y, scale: layer.scale, rotate: layer.rotate }}
+            transition={{ duration: reducedMotion ? 0 : 0.34, ease: WEIGHTED }}
+          >
+            <span
+              aria-hidden
+              className="absolute inset-0 rounded-[12px]"
+              style={{ boxShadow: '0 18px 40px -22px rgba(0,0,0,0.8)' }}
             />
-          ))}
-        </div>
+          </motion.div>
+        ))}
 
+        {/* The lifted, lit top card — raised slightly forward off the stack. */}
         <AnimatePresence initial={false} mode="wait">
           <motion.article
             key={current.id}
             drag
-            dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-            dragElastic={0.06}
+            dragSnapToOrigin
+            dragElastic={0.08}
             onDragEnd={onDragEnd}
-            initial={reducedMotion ? false : { opacity: 0, x: 26, scale: 0.985 }}
-            animate={{ opacity: 1, x: 0, y: 0, scale: 1, rotate: 0 }}
-            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, x: -22, scale: 0.985 }}
-            transition={{ duration: reducedMotion ? 0 : 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="relative z-10 max-h-[min(72vh,620px)] overflow-y-auto rounded-[12px] border border-[#d4c8b2]/65 px-6 py-6 text-[#2a251e] shadow-[0_1px_0_rgba(255,255,255,0.72)_inset,0_30px_80px_-22px_rgba(0,0,0,0.86)] cursor-grab active:cursor-grabbing"
-            style={{
-              background:
-                'linear-gradient(145deg, rgba(244,237,224,0.99), rgba(231,222,204,0.98) 58%, rgba(219,208,187,0.96))',
-            }}
+            initial={reducedMotion ? false : { opacity: 0, y: 24, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.94 }}
+            transition={{ duration: reducedMotion ? 0 : 0.34, ease: WEIGHTED }}
+            className="relative z-10 max-h-[min(64vh,540px)] overflow-y-auto rounded-[12px] border border-[#d4c8b2]/65 px-6 py-6 text-[#2a251e] shadow-[0_1px_0_rgba(255,255,255,0.72)_inset,0_34px_84px_-20px_rgba(0,0,0,0.9)] cursor-grab active:cursor-grabbing"
+            style={{ background: PAPER }}
           >
             <ReadableContributionCard
               contribution={current}
@@ -172,32 +190,20 @@ export function CardStackViewer({
             />
           </motion.article>
         </AnimatePresence>
+        </div>
 
-        {count > 1 && (
-          <div className="relative z-20 mt-8 flex items-center justify-between gap-4 text-parchment/54">
-            <button
-              type="button"
-              onClick={goPrevious}
-              disabled={!canGoPrevious}
-              aria-label="Previous card"
-              className="h-9 w-9 rounded-full border border-white/12 bg-[#1a160f]/55 text-lg leading-none transition enabled:hover:text-parchment disabled:opacity-25"
-            >
-              ‹
-            </button>
-            <p className="min-w-[4.5rem] text-center text-xs tabular-nums" aria-live="polite">
-              {index + 1} of {count}
-            </p>
-            <button
-              type="button"
-              onClick={goNext}
-              disabled={!canGoNext}
-              aria-label="Next card"
-              className="h-9 w-9 rounded-full border border-white/12 bg-[#1a160f]/55 text-lg leading-none transition enabled:hover:text-parchment disabled:opacity-25"
-            >
-              ›
-            </button>
-          </div>
-        )}
+        {/* Whisper-quiet "set down" — usability insurance, never chrome. */}
+        <div className="relative z-20 mt-12 flex justify-center">
+          <button
+            ref={setDownRef}
+            type="button"
+            onClick={onClose}
+            aria-label="Set the card down"
+            className="px-6 py-1 text-lg leading-none text-parchment/28 transition hover:text-parchment/55 focus:outline-none focus-visible:text-parchment/75"
+          >
+            ⌄
+          </button>
+        </div>
       </div>
     </motion.div>
   )
