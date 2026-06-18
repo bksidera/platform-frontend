@@ -220,7 +220,20 @@ function getMoundPlan(count: number, tile: number, stageWidth: number) {
     ...generateMidgroundSlots(count),
     ...foregroundSlots(count),
   ]
-  const height = count <= 1 ? Math.round(tile * 1.48) : count <= 12 ? Math.round(tile * 1.72) : Math.round(tile * 1.86)
+  const baseHeight = count <= 1 ? tile * 1.48 : count <= 12 ? tile * 1.72 : tile * 1.86
+  // Ensure the stage is tall enough to contain the lowest card so the
+  // overflow-hidden frame never clips a foreground card's bottom edge.
+  const maxBottom = slots.reduce((max, slot) => {
+    const slotSize =
+      slot.tier === 'foreground'
+        ? foregroundSize
+        : slot.tier === 'midground'
+          ? midgroundSize
+          : backgroundSize
+    const bottom = slot.y * (tile / 76) + (slotSize * CARD_ASPECT) / 2
+    return Math.max(max, bottom)
+  }, 0)
+  const height = Math.round(Math.max(baseHeight, maxBottom + 4))
 
   return { foregroundSize, midgroundSize, backgroundSize, spread, slots, height }
 }
