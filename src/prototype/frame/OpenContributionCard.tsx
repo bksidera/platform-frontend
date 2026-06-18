@@ -316,7 +316,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
             <div className="mb-2.5">
               <span className="block text-[11px] font-medium text-[#211c16]/50">Amount</span>
               <p className="mt-0.5 text-[11px] leading-snug text-[#211c16]/50">
-                Add one if you'd like — only the creator sees it.
+                Add an amount if you'd like. Only the creator sees it.
               </p>
             </div>
             <div className="space-y-1.5">
