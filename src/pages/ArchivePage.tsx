@@ -1,11 +1,10 @@
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getPublicArchive } from '../services/api'
 
 /**
- * The Archive (/:slug): a monument, not a storefront. The artist's name set
- * large is the hero. Aggregate counts always; named Stewards arrive with the
- * two-key work (B6).
+ * The Archive (/:slug): creator identity, not a storefront. Frames are shared
+ * as direct public objects when a creator wants cards attached to a work.
  */
 export function ArchivePage() {
   const { slug = '' } = useParams()
@@ -63,17 +62,13 @@ export function ArchivePage() {
         </ul>
       )}
 
-      {/* The two acts. Stewardship arrives in B4; the Moment is live. */}
       <div className="mt-auto space-y-3">
         {archive.stripeOnboarded ? (
-          <Link
-            to={`/give/${archive.slug}`}
-            className="block w-full text-center py-5 border border-line bg-surface font-display text-xl tracking-wide hover:border-parchment/30"
-          >
-            Make a gift
-          </Link>
+          <p className="text-center text-sm text-muted">
+            Cards live with each frame the creator shares.
+          </p>
         ) : (
-          <p className="text-center text-sm text-muted">Not yet receiving gifts.</p>
+          <p className="text-center text-sm text-muted">No active frame shared here yet.</p>
         )}
       </div>
     </div>

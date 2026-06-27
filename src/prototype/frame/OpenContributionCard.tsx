@@ -14,8 +14,10 @@ const FALLBACK_DISPLAY_NAME = 'Visitor'
 
 export interface CardDraft {
   displayName: string
+  email: string
   note: string
   imageUrl: string | null
+  imageFile: File | null
   amountCents: number | null // null = opted out
 }
 
@@ -135,8 +137,10 @@ function useMobileKeyboardAwareComposer() {
 export function OpenContributionCard({ busy, error, onPlace }: Props) {
   const customInputRef = useRef<HTMLInputElement | null>(null)
   const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
   const [note, setNote] = useState('')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
   const [amountCents, setAmountCents] = useState<number | null>(null)
   const [customOpen, setCustomOpen] = useState(false)
   const [custom, setCustom] = useState('')
@@ -144,12 +148,15 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
 
   const amountSelected = !justCard && !!amountCents && amountCents >= 100
   const hasDisplayName = name.trim().length > 0
+  const hasEmail = email.trim().includes('@')
   const hasNote = note.trim().length > 0
   const hasStartedCard = hasNote || hasDisplayName || !!imageUrl
   const hasCompletionChoice = amountSelected || justCard
-  const canPlace = hasStartedCard && hasCompletionChoice
+  const canPlace = hasStartedCard && hasEmail && hasCompletionChoice
   const helperText = !hasStartedCard
     ? 'Add your name or note to begin.'
+    : !hasEmail
+      ? 'Add your email to place the card.'
     : !hasCompletionChoice
       ? 'Select an amount or "just the card" to move forward.'
       : null
@@ -173,8 +180,10 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
     if (!canPlace) return
     onPlace({
       displayName: name.trim() || FALLBACK_DISPLAY_NAME,
+      email: email.trim(),
       note: note.trim(),
       imageUrl,
+      imageFile,
       amountCents: justCard ? null : amountCents,
     })
   }
@@ -230,6 +239,20 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
         />
       </label>
 
+      <label className="block mb-3" data-composer-section>
+        <span className="sr-only">Your email</span>
+        <input
+          type="email"
+          aria-label="Your email"
+          placeholder="Email"
+          value={email}
+          onFocus={scrollFocusedFieldIntoView}
+          onBlur={clearFallbackKeyboardSpace}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full rounded-none border-0 bg-transparent px-0 py-0 font-display text-[16px] leading-6 text-[#211c16]/72 placeholder:text-[#8a7d68] focus:outline-none"
+        />
+      </label>
+
       <label className="block mb-4" data-composer-section>
         <span className="sr-only">Your card</span>
         <textarea
@@ -270,7 +293,10 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
                 type="button"
                 aria-label="Remove photo"
                 onPointerDown={blurActiveTextField}
-                onClick={() => setImageUrl(null)}
+                onClick={() => {
+                  setImageUrl(null)
+                  setImageFile(null)
+                }}
                 className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-[#211c16] border border-[#f2ebdd]/70 text-[#f2ebdd] text-[10px] leading-none"
               >
                 ×
@@ -293,7 +319,10 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0]
-                  if (f) setImageUrl(URL.createObjectURL(f))
+                  if (f) {
+                    setImageFile(f)
+                    setImageUrl(URL.createObjectURL(f))
+                  }
                 }}
               />
             </label>

@@ -1,7 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { ArchivePage } from './pages/ArchivePage'
-import { MonumentPage } from './pages/MonumentPage'
-import { MomentFlowPage } from './pages/MomentFlowPage'
+import { FramePage } from './pages/FramePage'
 import { AuthVerifyPage } from './pages/AuthVerifyPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { FramePrototypePage } from './prototype/frame/FramePrototypePage'
@@ -14,8 +13,7 @@ export function App() {
         <Route path="/auth/verify" element={<AuthVerifyPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/dashboard/onboarding" element={<DashboardPage />} />
-        <Route path="/m/:slug" element={<MonumentPage />} />
-        <Route path="/give/:slug" element={<MomentFlowPage />} />
+        <Route path="/m/:slug" element={<FramePage />} />
         {/* /me (giver profile) arrives with identity claiming (B4/B6). */}
         <Route path="/me" element={<DashboardPage />} />
         <Route path="/:slug" element={<ArchivePage />} />

@@ -61,6 +61,7 @@ export function seedSupport(count: number): Contribution[] {
       roomId: CREATOR.roomId,
       type: (noAmount ? 'note' : 'support') as 'support' | 'note',
       displayName: NAMES[i % NAMES.length] ?? 'A card',
+      email: undefined,
       note: hasNote ? NOTES[i % NOTES.length] : undefined,
       imageUrl: hasPhoto ? PHOTOS[i % PHOTOS.length] : undefined,
       supportAmountCents: noAmount ? 0 : ([500, 1000, 2500][i % 3] ?? 1000),

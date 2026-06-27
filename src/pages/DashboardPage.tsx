@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { authStore } from '../stores/authStore'
 import { getOnboardingStatus, requestCreatorLink, startOnboarding } from '../services/api'
-import { MonumentsPanel } from '../components/dashboard/MonumentsPanel'
+import { FramesPanel } from '../components/dashboard/FramesPanel'
 
 function SignIn() {
   const [email, setEmail] = useState('')
@@ -90,12 +90,12 @@ function Onboarding() {
         <p className="text-muted">…</p>
       ) : status?.onboarded ? (
         <p className="text-parchment/90">
-          You're set up to receive gifts. All you need to do is exist.
+          You're set up to receive amounts inside cards. All you need to do is exist.
         </p>
       ) : (
         <div className="space-y-4">
           <p className="text-muted text-sm leading-relaxed">
-            Payments arrive through Stripe. Set up your account once; gifts route to you directly.
+            Amounts arrive through Stripe. Set up your account once; cards stay attached to your work.
           </p>
           <button
             type="button"
@@ -121,7 +121,7 @@ export function DashboardPage() {
       {signedInCreator ? (
         <>
           <Onboarding />
-          <MonumentsPanel />
+          <FramesPanel />
         </>
       ) : (
         <SignIn />

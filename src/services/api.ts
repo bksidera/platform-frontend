@@ -2,9 +2,14 @@ import apiClient from './apiClient'
 import type {
   ApiEnvelope,
   MomentIntent,
+  CardPaymentIntent,
+  CardPaymentStatus,
+  MyFrame,
   MyMonument,
   Principal,
   PublicArchive,
+  PublicCard,
+  PublicFrame,
   PublicMonument,
   RevealedInscription,
   StreamStatus,
@@ -63,6 +68,48 @@ export async function getStreamStatus(streamId: string) {
   const res = await apiClient.get<ApiEnvelope<StreamStatus>>('/payment/streamStatus', {
     params: { streamId },
   })
+  return res.data.data
+}
+
+// ----- Living Frame -----
+
+export async function getFrame(slug: string) {
+  const res = await apiClient.get<ApiEnvelope<PublicFrame>>(`/frames/${slug}`)
+  return res.data.data
+}
+
+export async function createFrame(input: {
+  title: string
+  context?: string
+  imageUrl: string
+}) {
+  const res = await apiClient.post<ApiEnvelope<MyFrame>>('/frames', input)
+  return res.data.data
+}
+
+export async function listMyFrames() {
+  const res = await apiClient.get<ApiEnvelope<{ frames: MyFrame[] }>>('/frames/mine')
+  return res.data.data.frames
+}
+
+export async function createCard(slug: string, input: {
+  displayName: string
+  email: string
+  note?: string
+  photoUrl?: string
+  amountCents?: number
+}) {
+  const res = await apiClient.post<ApiEnvelope<PublicCard>>(`/frames/${slug}/cards`, input)
+  return res.data.data
+}
+
+export async function createCardPaymentIntent(cardId: string) {
+  const res = await apiClient.post<ApiEnvelope<CardPaymentIntent>>(`/cards/${cardId}/payment-intent`)
+  return res.data.data
+}
+
+export async function getCardPaymentStatus(cardId: string) {
+  const res = await apiClient.get<ApiEnvelope<CardPaymentStatus>>(`/cards/${cardId}/payment-status`)
   return res.data.data
 }
 

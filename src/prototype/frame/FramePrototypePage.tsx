@@ -81,6 +81,7 @@ export function FramePrototypePage() {
         roomId: CREATOR.roomId,
         type: (draft.amountCents ? 'support' : 'note') as 'support' | 'note',
         displayName: draft.displayName,
+        email: draft.email,
         note: draft.note || undefined,
         imageUrl: draft.imageUrl ?? undefined,
         supportAmountCents: draft.amountCents ?? 0,

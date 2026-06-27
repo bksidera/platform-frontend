@@ -7,6 +7,7 @@ export interface CreateContributionInput {
   roomId: string
   type: ContributionType
   displayName: string
+  email: string
   note?: string
   imageUrl?: string
   supportAmountCents: number
@@ -20,6 +21,7 @@ export interface Contribution {
   roomId: string
   type: ContributionType
   displayName: string
+  email?: string
   note?: string
   imageUrl?: string
   supportAmountCents: number
