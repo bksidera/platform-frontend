@@ -29,12 +29,24 @@ function SignIn() {
   }
 
   if (sent) {
-    return <p className="text-muted">Check your email for a sign-in link.</p>
+    return (
+      <div className="max-w-sm border border-line bg-surface p-6">
+        <h1 className="font-display text-3xl">Check your email.</h1>
+        <p className="mt-3 text-sm leading-relaxed text-muted">
+          We sent a sign-in link. Open it in this browser to continue.
+        </p>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-4 max-w-sm">
-      <h1 className="font-display text-3xl">Sign in</h1>
+    <div className="max-w-sm space-y-5">
+      <header>
+        <h1 className="font-display text-4xl">PLATFORM</h1>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          Sign in to create a Living Frame and collect cards beneath your work.
+        </p>
+      </header>
       <input
         type="email"
         placeholder="Your email"
@@ -55,7 +67,7 @@ function SignIn() {
         onClick={submit}
         className="w-full py-3 border border-line bg-surface font-display disabled:opacity-40"
       >
-        Send sign-in link
+        {busy ? 'Sending...' : 'Send sign-in link'}
       </button>
     </div>
   )
@@ -80,22 +92,25 @@ function Onboarding() {
   }
 
   return (
-    <div className="space-y-8 max-w-sm">
-      <header>
-        <h1 className="font-display text-3xl">{principal?.name}</h1>
+    <div className="border border-line bg-surface p-5">
+      <header className="flex items-start justify-between gap-5">
+        <div>
+          <p className="text-xs uppercase tracking-[0.16em] text-muted">Creator</p>
+          <h1 className="mt-1 font-display text-3xl">{principal?.name}</h1>
+        </div>
         {principal?.slug && (
-          <p className="text-muted text-sm mt-1">Your archive: /{principal.slug}</p>
+          <p className="text-right text-sm text-muted">/{principal.slug}</p>
         )}
       </header>
 
       {isLoading ? (
-        <p className="text-muted">…</p>
+        <p className="mt-6 text-sm text-muted">Checking payment setup...</p>
       ) : status?.onboarded ? (
-        <p className="text-parchment/90">
+        <p className="mt-6 text-sm leading-relaxed text-parchment/90">
           You're set up to receive amounts inside cards. All you need to do is exist.
         </p>
       ) : (
-        <div className="space-y-4">
+        <div className="mt-6 space-y-4">
           <p className="text-muted text-sm leading-relaxed">
             Amounts arrive through Stripe. Set up your account once; cards stay attached to your work.
           </p>
@@ -119,7 +134,7 @@ export function DashboardPage() {
   const signedInCreator = isAuthenticated && principal?.kind === 'creator'
 
   return (
-    <div className="min-h-full max-w-xl mx-auto px-6 py-16 space-y-12">
+    <div className="min-h-full max-w-3xl mx-auto px-6 py-12 md:py-16 space-y-10">
       {signedInCreator ? (
         <>
           <Onboarding />

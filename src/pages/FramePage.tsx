@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import { loadStripe } from '@stripe/stripe-js'
@@ -45,7 +45,7 @@ function asContribution(card: PublicCard, frameId: string, creatorId: string): C
 export function FramePage() {
   const { slug = '' } = useParams()
   const queryClient = useQueryClient()
-  const { data: frame, isLoading } = useQuery({
+  const { data: frame, isLoading, isError } = useQuery({
     queryKey: ['frame', slug],
     queryFn: () => getFrame(slug),
     enabled: !!slug,
@@ -63,6 +63,12 @@ export function FramePage() {
   const composerRef = useRef<HTMLDivElement | null>(null)
   const stackReturnRef = useRef<HTMLElement | null>(null)
   const viewerRole: ViewerRole = 'public'
+
+  useEffect(() => {
+    if (!confirmation) return
+    const timeout = window.setTimeout(() => setConfirmation(null), 4200)
+    return () => window.clearTimeout(timeout)
+  }, [confirmation])
 
   const cards = useMemo(() => {
     if (!frame) return ownCards
@@ -153,6 +159,11 @@ export function FramePage() {
     await queryClient.invalidateQueries({ queryKey: ['frame', slug] })
   }
 
+  const dismissPayment = () => {
+    setPendingPayment(null)
+    setConfirmation('Your card is here. The amount needs another try.')
+  }
+
   const openStack = (card: Contribution, opener: HTMLElement) => {
     stackReturnRef.current = opener
     setStackState({ isOpen: true, entryCardId: card.id })
@@ -163,11 +174,32 @@ export function FramePage() {
     window.requestAnimationFrame(() => stackReturnRef.current?.focus())
   }
 
-  if (isLoading) return <div className="min-h-full" />
-  if (!frame) {
+  if (isLoading) {
     return (
-      <div className="min-h-full flex items-center justify-center text-muted">
-        No frame at this address.
+      <div className="flex min-h-full items-center justify-center bg-ink px-6 text-center">
+        <div className="border border-line bg-surface px-7 py-6">
+          <p className="font-display text-xl text-parchment">Preparing frame</p>
+          <p className="mt-2 text-sm text-muted">The image and cards are coming into view.</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!frame || isError) {
+    return (
+      <div className="flex min-h-full items-center justify-center bg-ink px-6 text-center">
+        <div className="max-w-sm border border-line bg-surface px-7 py-6">
+          <p className="font-display text-xl text-parchment">Frame not found</p>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            This frame may have moved, or the link may need another look.
+          </p>
+          <Link
+            to="/"
+            className="mt-5 inline-flex border border-line px-4 py-2 text-sm text-parchment hover:border-parchment/30"
+          >
+            Return home
+          </Link>
+        </div>
       </div>
     )
   }
@@ -185,9 +217,12 @@ export function FramePage() {
 
       <div className="relative max-w-3xl mx-auto px-7 md:px-12 pb-12 flex flex-col items-center">
         <header className="text-center pt-12 md:pt-7 pb-5">
-          <h1 className="font-display text-2xl text-parchment/95 leading-none">{frame.creator.name}</h1>
+          <p className="text-[11px] uppercase tracking-[0.16em] text-parchment/45">
+            {frame.creator.name}
+          </p>
+          <h1 className="mt-1 font-display text-2xl text-parchment/95 leading-none">{frame.title}</h1>
           {frame.context && (
-            <p className="text-[11px] tracking-[0.14em] text-parchment/50 mt-1.5">
+            <p className="text-[11px] tracking-[0.14em] text-parchment/50 mt-2">
               {frame.context}
             </p>
           )}
@@ -274,6 +309,21 @@ export function FramePage() {
             className="fixed inset-0 z-40 bg-black/70 px-5 py-10 overflow-y-auto"
           >
             <div className="mx-auto max-w-md border border-line bg-ink p-5">
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <p className="font-display text-xl text-parchment">Finish amount</p>
+                  <p className="mt-1 text-sm leading-relaxed text-muted">
+                    Your card has been placed. Finish the amount here when you are ready.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={dismissPayment}
+                  className="shrink-0 border border-line px-3 py-1.5 text-sm text-muted hover:text-parchment"
+                >
+                  Close
+                </button>
+              </div>
               <PaymentStep
                 stripePromise={stripePromise}
                 clientSecret={pendingPayment.clientSecret}

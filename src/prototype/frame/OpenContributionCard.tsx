@@ -175,6 +175,12 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
     window.requestAnimationFrame(() => customInputRef.current?.focus())
   }, [customOpen])
 
+  useEffect(() => {
+    return () => {
+      if (imageUrl?.startsWith('blob:')) URL.revokeObjectURL(imageUrl)
+    }
+  }, [imageUrl])
+
   const place = () => {
     blurActiveTextField()
     if (!canPlace) return
@@ -320,6 +326,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
                 onChange={(e) => {
                   const f = e.target.files?.[0]
                   if (f) {
+                    if (imageUrl?.startsWith('blob:')) URL.revokeObjectURL(imageUrl)
                     setImageFile(f)
                     setImageUrl(URL.createObjectURL(f))
                   }
@@ -408,6 +415,11 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
               </button>
             </div>
           </motion.div>
+        )}
+        {hasStartedCard && imageUrl && (
+          <p className="mt-2 text-[10px] leading-snug text-[#211c16]/42">
+            Photos appear after review.
+          </p>
         )}
       </motion.div>
 
