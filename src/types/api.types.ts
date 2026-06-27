@@ -23,16 +23,6 @@ export interface PublicArchive {
   stewardCount: number
 }
 
-export interface MomentIntent {
-  streamId: string
-  clientSecret: string
-}
-
-export interface StreamStatus {
-  id: string
-  status: 'pending' | 'succeeded' | 'failed'
-}
-
 export interface PublicCard {
   id: string
   displayName: string
@@ -76,43 +66,4 @@ export interface CardPaymentIntent {
 export interface CardPaymentStatus {
   id: string
   status: 'none' | 'pending' | 'succeeded' | 'failed'
-}
-
-export interface MonumentPin {
-  id: string
-  x: number
-  y: number
-  glyph: string
-}
-
-export interface PublicMonument {
-  id: string
-  title: string
-  venue: string
-  eventDate: string
-  imageUrl: string
-  qrSourceSlug: string
-  creator: { name: string; slug: string }
-  inscriptions: MonumentPin[]
-  inscriptionCount: number
-}
-
-export interface RevealedInscription {
-  id: string
-  glyph: string
-  giverName: string | null
-  observationText: string | null
-  venueStamp: string | null
-  createdAt: string
-  countersignedAt: string | null
-}
-
-export interface MyMonument {
-  id: string
-  title: string
-  venue: string
-  eventDate: string
-  imageUrl: string
-  qrSourceSlug: string
-  inscriptionCount: number
 }

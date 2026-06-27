@@ -18,7 +18,7 @@ import {
   uploadImage,
 } from '../services/api'
 import type { PublicCard } from '../types/api.types'
-import { PaymentStep } from '../components/give/PaymentStep'
+import { PaymentStep } from '../components/payment/PaymentStep'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string)
 

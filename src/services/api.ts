@@ -1,18 +1,13 @@
 import apiClient from './apiClient'
 import type {
   ApiEnvelope,
-  MomentIntent,
   CardPaymentIntent,
   CardPaymentStatus,
   MyFrame,
-  MyMonument,
   Principal,
   PublicArchive,
   PublicCard,
   PublicFrame,
-  PublicMonument,
-  RevealedInscription,
-  StreamStatus,
 } from '../types/api.types'
 
 // ----- Auth -----
@@ -48,26 +43,6 @@ export async function getOnboardingStatus() {
   const res = await apiClient.get<ApiEnvelope<{ onboarded: boolean; hasAccount: boolean }>>(
     '/creator/onboarding/status',
   )
-  return res.data.data
-}
-
-// ----- Payment -----
-
-export async function createMomentIntent(input: {
-  creatorSlug: string
-  amountCents: number
-  name: string
-  email: string
-  monumentSlug?: string
-}) {
-  const res = await apiClient.post<ApiEnvelope<MomentIntent>>('/payment/createMomentIntent', input)
-  return res.data.data
-}
-
-export async function getStreamStatus(streamId: string) {
-  const res = await apiClient.get<ApiEnvelope<StreamStatus>>('/payment/streamStatus', {
-    params: { streamId },
-  })
   return res.data.data
 }
 
@@ -113,45 +88,6 @@ export async function getCardPaymentStatus(cardId: string) {
   return res.data.data
 }
 
-// ----- Monument -----
-
-export async function getMonument(qrSourceSlug: string) {
-  const res = await apiClient.get<ApiEnvelope<PublicMonument>>(`/monument/${qrSourceSlug}`)
-  return res.data.data
-}
-
-export async function revealInscription(id: string) {
-  const res = await apiClient.get<ApiEnvelope<RevealedInscription>>(`/monument/inscription/${id}`)
-  return res.data.data
-}
-
-export async function placeInscription(input: {
-  streamId: string
-  x: number
-  y: number
-  glyph: string
-  observationText?: string
-  visibility?: 'private' | 'public'
-}) {
-  const res = await apiClient.post<ApiEnvelope<{ id: string }>>('/monument/inscription', input)
-  return res.data.data
-}
-
-export async function createMonument(input: {
-  title: string
-  venue: string
-  eventDate: string
-  imageUrl: string
-}) {
-  const res = await apiClient.post<ApiEnvelope<MyMonument>>('/monument', input)
-  return res.data.data
-}
-
-export async function listMyMonuments() {
-  const res = await apiClient.get<ApiEnvelope<{ monuments: MyMonument[] }>>('/monument/mine')
-  return res.data.data.monuments
-}
-
 export async function uploadImage(file: File): Promise<string> {
   const form = new FormData()
   form.append('file', file)
@@ -170,7 +106,8 @@ export async function uploadImage(file: File): Promise<string> {
 export function trackEvent(input: {
   type: string
   sourceSlug?: string
-  monumentId?: string
+  frameId?: string
+  cardId?: string
   creatorId?: string
   metadata?: Record<string, unknown>
 }) {
