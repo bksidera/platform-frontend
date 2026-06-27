@@ -7,18 +7,21 @@ import { FramesPanel } from '../components/dashboard/FramesPanel'
 function SignIn() {
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
-  const [needsName, setNeedsName] = useState(false)
   const [sent, setSent] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const submit = async () => {
     setBusy(true)
+    setError(null)
     try {
       await requestCreatorLink(email.trim(), name.trim() || undefined)
       setSent(true)
     } catch (e) {
       if (e instanceof Error && e.message.includes('NAME_REQUIRED')) {
-        setNeedsName(true)
+        setError('Add your name to create your creator account.')
+      } else {
+        setError(e instanceof Error ? e.message : 'The sign-in link could not be sent.')
       }
     } finally {
       setBusy(false)
@@ -39,17 +42,16 @@ function SignIn() {
         onChange={(e) => setEmail(e.target.value)}
         className="w-full bg-surface border border-line px-4 py-3 placeholder:text-muted/60"
       />
-      {needsName && (
-        <input
-          placeholder="Your name, as it should appear"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full bg-surface border border-line px-4 py-3 placeholder:text-muted/60"
-        />
-      )}
+      <input
+        placeholder="Your name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="w-full bg-surface border border-line px-4 py-3 placeholder:text-muted/60"
+      />
+      {error && <p className="text-sm text-red-300/90">{error}</p>}
       <button
         type="button"
-        disabled={busy || !email.includes('@')}
+        disabled={busy || !email.includes('@') || !name.trim()}
         onClick={submit}
         className="w-full py-3 border border-line bg-surface font-display disabled:opacity-40"
       >
