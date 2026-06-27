@@ -9,6 +9,7 @@ export function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<DashboardPage />} />
         <Route path="/prototype/frame" element={<FramePrototypePage />} />
         <Route path="/auth/verify" element={<AuthVerifyPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
