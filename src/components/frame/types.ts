@@ -1,6 +1,6 @@
-// Living Frame contribution model — PLATFORM-update-1.md §11.
+// Living Frame contribution model.
 
-export type ContributionType = 'support' | 'note'
+export type ContributionType = 'amount' | 'note'
 
 export interface CreateContributionInput {
   creatorId: string
@@ -10,7 +10,7 @@ export interface CreateContributionInput {
   email: string
   note?: string
   imageUrl?: string
-  supportAmountCents: number
+  amountCents: number
   currency: 'USD'
   isPrivate?: boolean
 }
@@ -24,13 +24,13 @@ export interface Contribution {
   email?: string
   note?: string
   imageUrl?: string
-  supportAmountCents: number
+  amountCents: number
   currency: 'USD'
-  hasSupport: boolean
+  hasAmount: boolean
   createdAt: string
   visibility: 'public' | 'private'
 }
 
-export function deriveType(supportAmountCents: number): ContributionType {
-  return supportAmountCents > 0 ? 'support' : 'note'
+export function deriveType(amountCents: number): ContributionType {
+  return amountCents > 0 ? 'amount' : 'note'
 }

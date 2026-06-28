@@ -30,7 +30,7 @@ function SignIn() {
 
   if (sent) {
     return (
-      <div className="max-w-sm border border-line bg-surface p-6">
+      <div className="max-w-sm rounded-[8px] border border-line bg-surface p-6 shadow-[0_18px_60px_-42px_rgba(0,0,0,0.9)]">
         <h1 className="font-display text-3xl">Check your email.</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">
           We sent a sign-in link. Open it in this browser to continue.
@@ -42,9 +42,9 @@ function SignIn() {
   return (
     <div className="max-w-sm space-y-5">
       <header>
-        <h1 className="font-display text-4xl">PLATFORM</h1>
+        <h1 className="font-display text-4xl">For the moment the work moves someone.</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          Sign in to create a Living Frame and collect cards beneath your work.
+          Sign in to create a frame and gather cards beneath your work.
         </p>
       </header>
       <input
@@ -52,20 +52,20 @@ function SignIn() {
         placeholder="Your email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="w-full bg-surface border border-line px-4 py-3 placeholder:text-muted/60"
+        className="w-full rounded-[7px] border border-line bg-surface px-4 py-3 placeholder:text-muted/60"
       />
       <input
         placeholder="Your name"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="w-full bg-surface border border-line px-4 py-3 placeholder:text-muted/60"
+        className="w-full rounded-[7px] border border-line bg-surface px-4 py-3 placeholder:text-muted/60"
       />
       {error && <p className="text-sm text-red-300/90">{error}</p>}
       <button
         type="button"
         disabled={busy || !email.includes('@') || !name.trim()}
         onClick={submit}
-        className="w-full py-3 border border-line bg-surface font-display disabled:opacity-40"
+        className="w-full rounded-[7px] border border-line bg-surface py-3 font-display disabled:opacity-40"
       >
         {busy ? 'Sending...' : 'Send sign-in link'}
       </button>
@@ -92,8 +92,8 @@ function Onboarding() {
   }
 
   return (
-    <div className="border border-line bg-surface p-5">
-      <header className="flex items-start justify-between gap-5">
+    <div className="overflow-hidden rounded-[8px] border border-line bg-surface shadow-[0_18px_60px_-42px_rgba(0,0,0,0.9)]">
+      <header className="flex items-start justify-between gap-5 border-b border-line p-5">
         <div>
           <p className="text-xs uppercase tracking-[0.16em] text-muted">Creator</p>
           <h1 className="mt-1 font-display text-3xl">{principal?.name}</h1>
@@ -104,13 +104,22 @@ function Onboarding() {
       </header>
 
       {isLoading ? (
-        <p className="mt-6 text-sm text-muted">Checking payment setup...</p>
+        <p className="p-5 text-sm text-muted">Checking amount setup...</p>
+      ) : status?.simulated ? (
+        <div className="m-5 rounded-[7px] border border-brass/30 bg-brass/10 p-4">
+          <p className="font-display text-lg text-parchment">Demo amount mode</p>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            Amounts can be tested here, but no real money moves. Connect Stripe before a live room.
+          </p>
+        </div>
       ) : status?.onboarded ? (
-        <p className="mt-6 text-sm leading-relaxed text-parchment/90">
-          You're set up to receive amounts inside cards. All you need to do is exist.
-        </p>
+        <div className="p-5">
+          <p className="text-sm leading-relaxed text-parchment/90">
+            You're set up to receive amounts inside cards.
+          </p>
+        </div>
       ) : (
-        <div className="mt-6 space-y-4">
+        <div className="space-y-4 p-5">
           <p className="text-muted text-sm leading-relaxed">
             Amounts arrive through Stripe. Set up your account once; cards stay attached to your work.
           </p>
@@ -118,7 +127,7 @@ function Onboarding() {
             type="button"
             disabled={busy}
             onClick={begin}
-            className="w-full py-3 border border-line bg-surface font-display disabled:opacity-40"
+            className="w-full rounded-[7px] border border-line bg-ink py-3 font-display disabled:opacity-40"
           >
             {status?.hasAccount ? 'Continue setup' : 'Set up payments'}
           </button>
@@ -134,15 +143,25 @@ export function DashboardPage() {
   const signedInCreator = isAuthenticated && principal?.kind === 'creator'
 
   return (
-    <div className="min-h-full max-w-3xl mx-auto px-6 py-12 md:py-16 space-y-10">
-      {signedInCreator ? (
-        <>
-          <Onboarding />
-          <FramesPanel />
-        </>
-      ) : (
-        <SignIn />
-      )}
+    <div className="min-h-full bg-ink">
+      <div
+        aria-hidden
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(ellipse 70% 44% at 50% 0%, rgba(236,230,217,0.055) 0%, rgba(0,0,0,0) 58%)',
+        }}
+      />
+      <main className="relative mx-auto min-h-full max-w-5xl px-6 py-10 md:py-14">
+        {signedInCreator ? (
+          <div className="space-y-9">
+            <Onboarding />
+            <FramesPanel />
+          </div>
+        ) : (
+          <SignIn />
+        )}
+      </main>
     </div>
   )
 }

@@ -36,6 +36,12 @@ export interface PublicCard {
   createdAt: string
 }
 
+export interface CreatorCard extends PublicCard {
+  email: string
+  photoModerationStatus: 'pending' | 'approved' | 'held' | null
+  hiddenByCreator: boolean
+}
+
 export interface PublicFrame {
   id: string
   title: string
@@ -45,6 +51,10 @@ export interface PublicFrame {
   creator: { name: string; slug: string }
   cards: PublicCard[]
   cardCount: number
+}
+
+export interface CreatorFrame extends Omit<PublicFrame, 'cards'> {
+  cards: CreatorCard[]
 }
 
 export interface MyFrame {

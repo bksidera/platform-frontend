@@ -1,4 +1,4 @@
-import type { Contribution } from './types'
+import type { Contribution } from '../../components/frame/types'
 
 export const CREATOR = {
   id: 'maria-vane',
@@ -47,7 +47,7 @@ const PHOTOS = [
 // some don't, across every content combination (note, photo, both, minimal,
 // private). Deterministic so lab states are stable and comparable. Every card
 // satisfies the validation rule: name + at least one of amount / note / photo.
-export function seedSupport(count: number): Contribution[] {
+export function seedContributions(count: number): Contribution[] {
   return Array.from({ length: count }, (_, i) => {
     const isPrivate = i % 9 === 4
     const hasPhoto = i % 3 === 1
@@ -59,14 +59,14 @@ export function seedSupport(count: number): Contribution[] {
       id: `seed-card-${i}`,
       creatorId: CREATOR.id,
       roomId: CREATOR.roomId,
-      type: (noAmount ? 'note' : 'support') as 'support' | 'note',
+      type: noAmount ? 'note' : 'amount',
       displayName: NAMES[i % NAMES.length] ?? 'A card',
       email: undefined,
       note: hasNote ? NOTES[i % NOTES.length] : undefined,
       imageUrl: hasPhoto ? PHOTOS[i % PHOTOS.length] : undefined,
-      supportAmountCents: noAmount ? 0 : ([500, 1000, 2500][i % 3] ?? 1000),
+      amountCents: noAmount ? 0 : ([500, 1000, 2500][i % 3] ?? 1000),
       currency: 'USD' as const,
-      hasSupport: !noAmount,
+      hasAmount: !noAmount,
       createdAt: new Date(Date.UTC(2026, 5, 11, 20, 0 + i)).toISOString(),
       visibility: (isPrivate ? 'private' : 'public') as 'public' | 'private',
     }

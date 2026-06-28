@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { LivingFrame } from './LivingFrame'
-import { ContributionCardRail } from './ContributionCardRail'
-import { OpenContributionCard, type CardDraft } from './OpenContributionCard'
-import { CardStackViewer } from './CardStackViewer'
-import { CREATOR, seedSupport } from './seeds'
-import { submitSupport, submitNote, loadUserContributions, clearUserContributions } from './contributions'
-import { useMatColor } from '../useMatColor'
-import type { ViewerRole } from './viewer'
-import type { Contribution } from './types'
+import { LivingFrame } from '../../components/frame/LivingFrame'
+import { ContributionCardRail } from '../../components/frame/ContributionCardRail'
+import { OpenContributionCard, type CardDraft } from '../../components/frame/OpenContributionCard'
+import { CardStackViewer } from '../../components/frame/CardStackViewer'
+import { CREATOR, seedContributions } from './seeds'
+import { submitAmountCard, submitNote, loadUserContributions, clearUserContributions } from './contributions'
+import { useMatColor } from '../../hooks/useMatColor'
+import type { ViewerRole } from '../../components/frame/viewer'
+import type { Contribution } from '../../components/frame/types'
 
 /**
  * Creator Demo v0.1: one public object, the card. The work stays dominant
@@ -54,7 +54,7 @@ export function FramePrototypePage() {
   }, [confirmation])
 
   const cards = useMemo(
-    () => [...seedSupport(seedCount), ...userContribs],
+    () => [...seedContributions(seedCount), ...userContribs],
     [seedCount, userContribs],
   )
 
@@ -79,15 +79,16 @@ export function FramePrototypePage() {
       const input = {
         creatorId: CREATOR.id,
         roomId: CREATOR.roomId,
-        type: (draft.amountCents ? 'support' : 'note') as 'support' | 'note',
+        type: draft.amountCents ? ('amount' as const) : ('note' as const),
         displayName: draft.displayName,
         email: draft.email,
         note: draft.note || undefined,
         imageUrl: draft.imageUrl ?? undefined,
-        supportAmountCents: draft.amountCents ?? 0,
+        amountCents: draft.amountCents ?? 0,
         currency: 'USD' as const,
+        isPrivate: draft.visibility === 'private',
       }
-      const created = draft.amountCents ? await submitSupport(input) : await submitNote(input)
+      const created = draft.amountCents ? await submitAmountCard(input) : await submitNote(input)
       setUserContribs((prev) => [...prev, created])
       setCardKey((k) => k + 1)
       setComposerOpen(false)

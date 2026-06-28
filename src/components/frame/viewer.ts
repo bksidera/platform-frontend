@@ -23,8 +23,8 @@ export function amountDisplay(
   viewerRole: ViewerRole,
   isOwn: boolean,
 ): AmountDisplay {
-  if (contribution.supportAmountCents <= 0) return { kind: 'none' }
-  const text = `$${Math.round(contribution.supportAmountCents / 100)}`
+  if (contribution.amountCents <= 0) return { kind: 'none' }
+  const text = `$${Math.round(contribution.amountCents / 100)}`
   if (viewerRole === 'creator') return { kind: 'amount', text }
   if (viewerRole === 'giver' && isOwn) return { kind: 'amount', text }
   return { kind: 'none' }

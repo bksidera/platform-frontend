@@ -339,21 +339,23 @@ function MoundCard({
           <span className="block h-px w-1/2 bg-[#2a251e]/7" />
         </span>
       ) : hasPhoto ? (
-        <span className="block h-full w-full p-[7%]">
-          <span className="relative block h-full w-full overflow-hidden rounded-[4px] bg-[#efe6d4] shadow-[0_1px_2px_rgba(0,0,0,0.2)_inset]">
+        <span
+          className="flex h-full w-full flex-col px-[10%] py-[9%]"
+          style={{ opacity: readable ? 1 : midground ? 0.4 : 0 }}
+        >
+          <span
+            className="block truncate font-display leading-none text-[#2a251e]/80"
+            style={{ fontSize: readable ? Math.max(12, size * 0.14) : Math.max(9, size * 0.13) }}
+          >
+            {firstName(card.displayName)}
+          </span>
+          <span className="mt-auto block h-[68%] w-full overflow-hidden rounded-[4px] bg-[#efe6d4] p-[5%] shadow-[0_1px_2px_rgba(0,0,0,0.18)_inset]">
             <img
               src={card.imageUrl}
               alt=""
               draggable={false}
-              className="h-full w-full object-cover opacity-90 saturate-[0.48] contrast-[0.88] sepia-[0.16]"
+              className="h-full w-full rounded-[2px] object-cover opacity-90 saturate-[0.48] contrast-[0.88] sepia-[0.16]"
             />
-            {readable && (
-              <span className="absolute inset-x-0 bottom-0 bg-[#efe6d4]/88 px-1.5 py-1">
-                <span className="block truncate font-display text-[11px] leading-none text-[#2a251e]/76">
-                  {firstName(card.displayName)}
-                </span>
-              </span>
-            )}
           </span>
         </span>
       ) : (

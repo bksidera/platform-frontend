@@ -19,6 +19,7 @@ export interface CardDraft {
   imageUrl: string | null
   imageFile: File | null
   amountCents: number | null // null = opted out
+  visibility: 'public' | 'private'
 }
 
 interface Props {
@@ -43,6 +44,8 @@ const CHIP_SELECTED =
 // row reads as "pick one" before anything is chosen — without pre-selection.
 const CHIP_IDLE =
   'bg-[#d6c6a4]/35 text-[#211c16]/58 hover:bg-[#d6c6a4]/60 hover:text-[#211c16]/80'
+const CHIP_RECOMMENDED =
+  'relative after:absolute after:-top-1.5 after:left-1/2 after:-translate-x-1/2 after:rounded-full after:bg-[#211c16]/70 after:px-1.5 after:py-0.5 after:text-[8px] after:uppercase after:tracking-[0.08em] after:text-[#f2ebdd] after:content-["usual"]'
 
 function isMobileViewport() {
   return window.matchMedia('(max-width: 767px)').matches
@@ -145,6 +148,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
   const [customOpen, setCustomOpen] = useState(false)
   const [custom, setCustom] = useState('')
   const [justCard, setJustCard] = useState(false)
+  const [isPrivate, setIsPrivate] = useState(false)
 
   const amountSelected = !justCard && !!amountCents && amountCents >= 100
   const hasDisplayName = name.trim().length > 0
@@ -158,7 +162,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
     : !hasEmail
       ? 'Add your email to place the card.'
     : !hasCompletionChoice
-      ? 'Select an amount or "just the card" to move forward.'
+      ? 'Choose the amount that belongs with this card.'
       : null
   const placeButtonActive = canPlace && !busy
   const {
@@ -191,6 +195,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
       imageUrl,
       imageFile,
       amountCents: justCard ? null : amountCents,
+      visibility: isPrivate ? 'private' : 'public',
     })
   }
 
@@ -349,10 +354,12 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="mb-2.5">
-              <span className="block text-[11px] font-medium text-[#211c16]/50">Amount</span>
-              <p className="mt-0.5 text-[11px] leading-snug text-[#211c16]/50">
-                Add an amount if you'd like. Only the creator sees it.
+            <div className="mb-3">
+              <span className="block font-display text-[15px] leading-tight text-[#211c16]/72">
+                Add what the moment is worth to you.
+              </span>
+              <p className="mt-1 text-[11px] leading-snug text-[#211c16]/50">
+                It stays inside the card. Only the creator sees the amount.
               </p>
             </div>
             <div className="space-y-1.5">
@@ -366,7 +373,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
                     aria-pressed={amountCents === cents && !customOpen && !justCard}
                     className={`min-h-9 rounded-[5px] border border-transparent px-2 py-1.5 font-display text-[14px] transition-colors ${
                       amountCents === cents && !customOpen && !justCard ? CHIP_SELECTED : CHIP_IDLE
-                    }`}
+                    } ${cents === 1000 && amountCents !== cents && !customOpen && !justCard ? CHIP_RECOMMENDED : ''}`}
                   >
                     ${cents / 100}
                   </button>
@@ -407,19 +414,30 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
                 onPointerDown={blurActiveTextField}
                 onClick={selectJustCard}
                 aria-pressed={justCard}
-                className={`mx-auto block min-h-8 rounded-[5px] border border-transparent px-4 py-1.5 font-display text-[14px] transition-colors ${
+                className={`mx-auto block min-h-8 rounded-[5px] border border-transparent px-4 py-1.5 text-[12px] transition-colors ${
                   justCard ? CHIP_SELECTED : CHIP_IDLE
                 }`}
               >
-                Just the card
+                Place without amount
               </button>
             </div>
           </motion.div>
         )}
         {hasStartedCard && imageUrl && (
           <p className="mt-2 text-[10px] leading-snug text-[#211c16]/42">
-            Photos appear after review.
+            Photos appear with the card. The creator can hold them back.
           </p>
+        )}
+        {hasStartedCard && (
+          <label className="mt-3 flex cursor-pointer items-start gap-2 text-[11px] leading-snug text-[#211c16]/50">
+            <input
+              type="checkbox"
+              checked={isPrivate}
+              onChange={(e) => setIsPrivate(e.target.checked)}
+              className="mt-0.5 h-3.5 w-3.5 accent-[#211c16]"
+            />
+            <span>Keep this card between you and the creator.</span>
+          </label>
         )}
       </motion.div>
 

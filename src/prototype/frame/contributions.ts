@@ -1,11 +1,11 @@
-import type { Contribution, CreateContributionInput } from './types'
-import { deriveType } from './types'
+import type { Contribution, CreateContributionInput } from '../../components/frame/types'
+import { deriveType } from '../../components/frame/types'
 
 /**
  * Contribution creation with the payment abstraction (spec §11): the mock
  * payment step is isolated in `mockAuthorizePayment` so Stripe later replaces
- * exactly that function — payment success gates Support Contributions; Note
- * Contributions never touch the payment path.
+ * exactly that function — amount cards pass through it; no-amount cards never
+ * touch the payment path.
  */
 
 const STORAGE_KEY = 'platform-frame-proto'
@@ -16,13 +16,13 @@ function buildContribution(input: CreateContributionInput): Contribution {
     id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     creatorId: input.creatorId,
     roomId: input.roomId,
-    type: deriveType(input.supportAmountCents),
+    type: deriveType(input.amountCents),
     displayName: input.displayName,
     note: input.note || undefined,
     imageUrl: input.imageUrl || undefined,
-    supportAmountCents: input.supportAmountCents,
+    amountCents: input.amountCents,
     currency: input.currency,
-    hasSupport: input.supportAmountCents > 0,
+    hasAmount: input.amountCents > 0,
     createdAt: new Date().toISOString(),
     visibility: input.isPrivate ? 'private' : 'public',
   }
@@ -34,10 +34,10 @@ async function mockAuthorizePayment(_amountCents: number): Promise<{ ok: boolean
   return { ok: true }
 }
 
-export async function submitSupport(input: CreateContributionInput): Promise<Contribution> {
-  if (input.supportAmountCents <= 0) throw new Error('An amount is required')
+export async function submitAmountCard(input: CreateContributionInput): Promise<Contribution> {
+  if (input.amountCents <= 0) throw new Error('An amount is required')
   if (MOCK_PAYMENT) {
-    const payment = await mockAuthorizePayment(input.supportAmountCents)
+    const payment = await mockAuthorizePayment(input.amountCents)
     if (!payment.ok) throw new Error('That amount was not added. Your card is still here.')
   }
   const contribution = buildContribution(input)
@@ -49,7 +49,7 @@ export async function submitNote(input: CreateContributionInput): Promise<Contri
   if (!input.displayName.trim()) {
     throw new Error('Add your name to place the card.')
   }
-  const contribution = buildContribution({ ...input, supportAmountCents: 0 })
+  const contribution = buildContribution({ ...input, amountCents: 0 })
   persist(contribution)
   return contribution
 }

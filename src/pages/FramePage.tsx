@@ -3,13 +3,13 @@ import { Link, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import { loadStripe } from '@stripe/stripe-js'
-import { CardStackViewer } from '../prototype/frame/CardStackViewer'
-import { ContributionCardRail } from '../prototype/frame/ContributionCardRail'
-import { LivingFrame } from '../prototype/frame/LivingFrame'
-import { OpenContributionCard, type CardDraft } from '../prototype/frame/OpenContributionCard'
-import type { Contribution } from '../prototype/frame/types'
-import type { ViewerRole } from '../prototype/frame/viewer'
-import { useMatColor } from '../prototype/useMatColor'
+import { CardStackViewer } from '../components/frame/CardStackViewer'
+import { ContributionCardRail } from '../components/frame/ContributionCardRail'
+import { LivingFrame } from '../components/frame/LivingFrame'
+import { OpenContributionCard, type CardDraft } from '../components/frame/OpenContributionCard'
+import type { Contribution } from '../components/frame/types'
+import type { ViewerRole } from '../components/frame/viewer'
+import { useMatColor } from '../hooks/useMatColor'
 import {
   createCard,
   createCardPaymentIntent,
@@ -30,13 +30,13 @@ function asContribution(card: PublicCard, frameId: string, creatorId: string): C
     id: card.id,
     creatorId,
     roomId: frameId,
-    type: card.hasAmount ? 'support' : 'note',
+    type: card.hasAmount ? 'amount' : 'note',
     displayName: card.displayName,
     note: card.note ?? undefined,
     imageUrl: card.photoUrl ?? undefined,
-    supportAmountCents: card.amountCents ?? 0,
+    amountCents: card.amountCents ?? 0,
     currency: 'USD',
-    hasSupport: card.hasAmount,
+    hasAmount: card.hasAmount,
     createdAt: card.createdAt,
     visibility: card.visibility,
   }
@@ -73,8 +73,19 @@ export function FramePage() {
   const cards = useMemo(() => {
     if (!frame) return ownCards
     const serverCards = frame.cards.map((card) => asContribution(card, frame.id, frame.creator.slug))
-    const serverIds = new Set(serverCards.map((card) => card.id))
-    return [...serverCards, ...ownCards.filter((card) => !serverIds.has(card.id))]
+    const ownById = new Map(ownCards.map((card) => [card.id, card]))
+    const mergedServerCards = serverCards.map((card) => {
+      const ownCard = ownById.get(card.id)
+      if (!ownCard) return card
+      return {
+        ...card,
+        imageUrl: card.imageUrl ?? ownCard.imageUrl,
+        amountCents: ownCard.amountCents,
+        hasAmount: ownCard.hasAmount,
+      }
+    })
+    const serverIds = new Set(mergedServerCards.map((card) => card.id))
+    return [...mergedServerCards, ...ownCards.filter((card) => !serverIds.has(card.id))]
   }, [frame, ownCards])
 
   const ownIds = useMemo(() => new Set(ownCards.map((card) => card.id)), [ownCards])
@@ -89,11 +100,13 @@ export function FramePage() {
   }
 
   const pollPayment = async (cardId: string) => {
-    for (let i = 0; i < 12; i++) {
+    let delay = 800
+    for (let i = 0; i < 18; i++) {
       const status = await getCardPaymentStatus(cardId).catch(() => null)
       if (status?.status === 'succeeded') return true
       if (status?.status === 'failed') return false
-      await new Promise((resolve) => setTimeout(resolve, 800))
+      await new Promise((resolve) => setTimeout(resolve, delay))
+      delay = Math.min(Math.round(delay * 1.25), 2200)
     }
     return false
   }
@@ -110,13 +123,14 @@ export function FramePage() {
         note: draft.note || undefined,
         photoUrl,
         amountCents: draft.amountCents ?? undefined,
+        visibility: draft.visibility,
       })
       const own = asContribution(
         {
           ...created,
           amountCents: draft.amountCents ?? null,
           hasAmount: Boolean(draft.amountCents),
-          photoUrl: draft.imageUrl,
+          photoUrl: photoUrl ?? draft.imageUrl,
         },
         frame.id,
         frame.creator.slug,
