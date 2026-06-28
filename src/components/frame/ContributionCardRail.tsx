@@ -307,7 +307,7 @@ function MoundCard({
   const displayedNote = card.note ? truncateAtWord(card.note, hasPhoto ? (readable ? 30 : 16) : (readable ? 44 : 18)) : null
   const nameSize = readable ? Math.max(12, size * 0.14) : Math.max(9, size * 0.13)
   const noteSize = readable ? Math.max(10, size * 0.112) : Math.max(8, size * 0.1)
-  const photoHeight = hasNote ? '36%' : '58%'
+  const photoWidth = hasNote ? '72%' : '86%'
 
   return (
     <button
@@ -364,8 +364,8 @@ function MoundCard({
           )}
           {hasPhoto ? (
             <span
-              className="mt-auto block w-full shrink-0 overflow-hidden rounded-[4px] bg-[#efe6d4] p-[5%] shadow-[0_1px_2px_rgba(0,0,0,0.18)_inset]"
-              style={{ height: photoHeight }}
+              className="mt-auto block shrink-0 overflow-hidden rounded-[4px] bg-[#efe6d4] p-[4%] shadow-[0_1px_2px_rgba(0,0,0,0.18)_inset]"
+              style={{ width: photoWidth, aspectRatio: '4 / 3' }}
             >
               <img
                 src={card.imageUrl}
