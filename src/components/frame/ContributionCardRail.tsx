@@ -304,7 +304,10 @@ function MoundCard({
     'rgba(224,213,193,0.98)',
   ][tone] ?? 'rgba(242,235,222,0.99)'
   const contentOpacity = readable ? 1 : midground ? 0.28 : 0
-  const displayedNote = card.note ? truncateAtWord(card.note, readable ? 44 : 18) : null
+  const displayedNote = card.note ? truncateAtWord(card.note, hasPhoto ? (readable ? 30 : 16) : (readable ? 44 : 18)) : null
+  const nameSize = readable ? Math.max(12, size * 0.14) : Math.max(9, size * 0.13)
+  const noteSize = readable ? Math.max(10, size * 0.112) : Math.max(8, size * 0.1)
+  const photoHeight = hasNote ? '36%' : '58%'
 
   return (
     <button
@@ -338,48 +341,42 @@ function MoundCard({
           <span className="block h-px w-2/3 bg-[#2a251e]/8" />
           <span className="block h-px w-1/2 bg-[#2a251e]/7" />
         </span>
-      ) : hasPhoto ? (
-        <span
-          className="flex h-full w-full flex-col px-[10%] py-[9%]"
-          style={{ opacity: readable ? 1 : midground ? 0.4 : 0 }}
-        >
-          <span
-            className="block truncate font-display leading-none text-[#2a251e]/80"
-            style={{ fontSize: readable ? Math.max(12, size * 0.14) : Math.max(9, size * 0.13) }}
-          >
-            {firstName(card.displayName)}
-          </span>
-          <span className="mt-auto block h-[68%] w-full overflow-hidden rounded-[4px] bg-[#efe6d4] p-[5%] shadow-[0_1px_2px_rgba(0,0,0,0.18)_inset]">
-            <img
-              src={card.imageUrl}
-              alt=""
-              draggable={false}
-              className="h-full w-full rounded-[2px] object-cover opacity-90 saturate-[0.48] contrast-[0.88] sepia-[0.16]"
-            />
-          </span>
-        </span>
       ) : (
-        <span className="flex h-full flex-col px-[12%] py-[12%]" style={{ opacity: contentOpacity }}>
+        <span className="flex h-full flex-col gap-[6%] px-[12%] py-[11%]" style={{ opacity: contentOpacity }}>
           <span
             className="truncate font-display leading-none text-[#2a251e]/80"
-            style={{ fontSize: readable ? Math.max(12, size * 0.14) : Math.max(9, size * 0.13) }}
+            style={{ fontSize: nameSize }}
           >
             {firstName(card.displayName)}
           </span>
           {hasNote && (
             <span
-              className="mt-auto block overflow-hidden font-display leading-tight text-[#2a251e]/70"
+              className="block overflow-hidden font-display leading-tight text-[#2a251e]/70"
               style={{
-                fontSize: readable ? Math.max(11, size * 0.125) : Math.max(8, size * 0.1),
+                fontSize: noteSize,
                 display: '-webkit-box',
                 WebkitBoxOrient: 'vertical',
-                WebkitLineClamp: readable ? 3 : 2,
+                WebkitLineClamp: hasPhoto ? 2 : readable ? 3 : 2,
               }}
             >
               {displayedNote}
             </span>
           )}
-          {!hasNote && <span className="mt-auto block h-px w-2/3 bg-[#2a251e]/12" />}
+          {hasPhoto ? (
+            <span
+              className="mt-auto block w-full shrink-0 overflow-hidden rounded-[4px] bg-[#efe6d4] p-[5%] shadow-[0_1px_2px_rgba(0,0,0,0.18)_inset]"
+              style={{ height: photoHeight }}
+            >
+              <img
+                src={card.imageUrl}
+                alt=""
+                draggable={false}
+                className="h-full w-full rounded-[2px] object-cover opacity-90 saturate-[0.48] contrast-[0.88] sepia-[0.16]"
+              />
+            </span>
+          ) : (
+            !hasNote && <span className="mt-auto block h-px w-2/3 bg-[#2a251e]/12" />
+          )}
         </span>
       )}
     </button>
