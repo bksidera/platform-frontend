@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
-import { loadStripe } from '@stripe/stripe-js'
+import { loadStripe, type Stripe } from '@stripe/stripe-js'
 import { CardStackViewer } from '../components/frame/CardStackViewer'
 import { ContributionCardRail } from '../components/frame/ContributionCardRail'
 import { LivingFrame } from '../components/frame/LivingFrame'
@@ -20,7 +20,12 @@ import {
 import type { PublicCard } from '../types/api.types'
 import { PaymentStep } from '../components/payment/PaymentStep'
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string)
+let stripePromise: Promise<Stripe | null> | null = null
+
+function getStripePromise() {
+  stripePromise ??= loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string)
+  return stripePromise
+}
 
 type StackState = { isOpen: boolean; entryCardId: string | null }
 type PendingPayment = { cardId: string; clientSecret: string; creatorName: string } | null
@@ -49,6 +54,7 @@ export function FramePage() {
     queryKey: ['frame', slug],
     queryFn: () => getFrame(slug),
     enabled: !!slug,
+    staleTime: 60_000,
   })
   const matColor = useMatColor(frame?.imageUrl ?? '')
   const [ownCards, setOwnCards] = useState<Contribution[]>([])
@@ -190,10 +196,18 @@ export function FramePage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-full items-center justify-center bg-ink px-6 text-center">
-        <div className="border border-line bg-surface px-7 py-6">
-          <p className="font-display text-xl text-parchment">Preparing frame</p>
-          <p className="mt-2 text-sm text-muted">The image and cards are coming into view.</p>
+      <div className="relative min-h-full overflow-hidden bg-ink" aria-busy="true">
+        <div
+          aria-hidden
+          className="fixed inset-0 pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(ellipse 75% 55% at 50% 30%, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0) 48%, rgba(0,0,0,0.42) 100%)',
+          }}
+        />
+        <div className="relative mx-auto flex min-h-full max-w-3xl flex-col items-center px-7 pb-12 pt-24 md:px-12 md:pt-20">
+          <div className="h-[52vh] max-h-[34rem] w-[min(88vw,26rem)] animate-pulse rounded-[8px] border border-line bg-surface/35 shadow-[0_24px_60px_-12px_rgba(0,0,0,0.7)]" />
+          <span className="sr-only">Loading frame</span>
         </div>
       </div>
     )
@@ -339,7 +353,7 @@ export function FramePage() {
                 </button>
               </div>
               <PaymentStep
-                stripePromise={stripePromise}
+                stripePromise={getStripePromise()}
                 clientSecret={pendingPayment.clientSecret}
                 artistName={pendingPayment.creatorName}
                 onSucceeded={() => void closePayment()}
