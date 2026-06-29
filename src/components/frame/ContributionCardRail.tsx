@@ -304,10 +304,10 @@ function MoundCard({
     'rgba(224,213,193,0.98)',
   ][tone] ?? 'rgba(242,235,222,0.99)'
   const contentOpacity = readable ? 1 : midground ? 0.28 : 0
-  const displayedNote = card.note ? truncateAtWord(card.note, hasPhoto ? (readable ? 30 : 16) : (readable ? 44 : 18)) : null
+  const displayedNote = card.note ? truncateAtWord(card.note, hasPhoto ? (readable ? 24 : 14) : (readable ? 44 : 18)) : null
   const nameSize = readable ? Math.max(12, size * 0.14) : Math.max(9, size * 0.13)
   const noteSize = readable ? Math.max(10, size * 0.112) : Math.max(8, size * 0.1)
-  const photoWidth = hasNote ? '72%' : '86%'
+  const photoWidth = hasNote ? '66%' : '84%'
 
   return (
     <button
@@ -356,7 +356,7 @@ function MoundCard({
                 fontSize: noteSize,
                 display: '-webkit-box',
                 WebkitBoxOrient: 'vertical',
-                WebkitLineClamp: hasPhoto ? 2 : readable ? 3 : 2,
+                WebkitLineClamp: hasPhoto ? 1 : readable ? 3 : 2,
               }}
             >
               {displayedNote}
@@ -364,7 +364,7 @@ function MoundCard({
           )}
           {hasPhoto ? (
             <span
-              className="mt-auto block shrink-0 overflow-hidden rounded-[4px] bg-[#efe6d4] p-[4%] shadow-[0_1px_2px_rgba(0,0,0,0.18)_inset]"
+              className="mt-auto block shrink-0 self-center overflow-hidden rounded-[4px] bg-[#efe6d4] p-[4%] shadow-[0_1px_2px_rgba(0,0,0,0.18)_inset]"
               style={{ width: photoWidth, aspectRatio: '4 / 3' }}
             >
               <img
