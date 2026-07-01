@@ -124,7 +124,7 @@ export function FramePrototypePage() {
 
       <div className="relative max-w-3xl mx-auto px-7 md:px-12 pb-12 flex flex-col items-center">
         {/* Identity only; the mound carries the evidence. */}
-        <header className="text-center pt-12 md:pt-7 pb-5">
+        <header className="text-center pt-10 pb-4 md:pt-6 md:pb-4">
           <h1 className="font-display text-2xl text-parchment/95 leading-none">{CREATOR.name}</h1>
           <p className="text-[11px] tracking-[0.14em] text-parchment/50 mt-1.5">
             {CREATOR.context}
@@ -142,6 +142,7 @@ export function FramePrototypePage() {
               tile={tile}
               viewerRole={viewerRole}
               isOwn={isOwn}
+              creatorFirst={CREATOR.name.split(' ')[0]}
               justPlacedId={justPlacedId}
               isGathering={stackState.isOpen}
               hideLeaveYours={composerOpen}
@@ -155,7 +156,6 @@ export function FramePrototypePage() {
           <AnimatePresence initial={false} mode="wait">
             {composerOpen && (
               <motion.div
-                ref={composerRef}
                 key="composer"
                 layoutId="waiting-card"
                 initial={{ opacity: 0, y: 18, scale: 0.98 }}
@@ -164,12 +164,17 @@ export function FramePrototypePage() {
                 transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
                 className="w-full"
               >
-                <OpenContributionCard
-                  key={cardKey}
-                  busy={busy}
-                  error={error}
-                  onPlace={(d) => void place(d)}
-                />
+                {/* The ref lives on a plain child: a ref on the AnimatePresence
+                    child itself breaks its exit removal (framer-motion PopChild). */}
+                <div ref={composerRef}>
+                  <OpenContributionCard
+                    key={cardKey}
+                    busy={busy}
+                    error={error}
+                    creatorFirst={CREATOR.name.split(' ')[0]}
+                    onPlace={(d) => void place(d)}
+                  />
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

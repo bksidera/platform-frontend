@@ -15,7 +15,7 @@ export default {
         brass: '#c2a36b', // the single accent — stage-light warm; use sparingly
       },
       fontFamily: {
-        display: ['Fraunces', 'Georgia', 'serif'],
+        display: ['Fraunces Variable', 'Fraunces', 'Georgia', 'serif'],
         body: [
           '-apple-system',
           'BlinkMacSystemFont',

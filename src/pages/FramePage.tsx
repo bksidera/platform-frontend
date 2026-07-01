@@ -9,12 +9,14 @@ import { LivingFrame } from '../components/frame/LivingFrame'
 import { OpenContributionCard, type CardDraft } from '../components/frame/OpenContributionCard'
 import type { Contribution } from '../components/frame/types'
 import type { ViewerRole } from '../components/frame/viewer'
+import { Footer } from '../components/Footer'
 import { useMatColor } from '../hooks/useMatColor'
 import {
   createCard,
   createCardPaymentIntent,
   getCardPaymentStatus,
   getFrame,
+  trackEvent,
   uploadImage,
 } from '../services/api'
 import type { PublicCard } from '../types/api.types'
@@ -28,7 +30,55 @@ function getStripePromise() {
 }
 
 type StackState = { isOpen: boolean; entryCardId: string | null }
-type PendingPayment = { cardId: string; clientSecret: string; creatorName: string } | null
+type PendingPayment = {
+  cardId: string
+  clientSecret: string
+  creatorName: string
+  amountCents: number
+} | null
+
+// The confirmation is a moment, not a toast: one or two quiet lines, and —
+// when an amount still waits — the way to complete it. Actionable moments
+// stay until dismissed; plain ones fade on their own.
+type Confirmation = {
+  primary: string
+  secondary?: string
+  action?: { label: string; cardId: string }
+} | null
+
+// The visitor's own cards, remembered across reloads so an amount that didn't
+// go through can always be completed. Stored per frame; ids plus the intended
+// amount are all that's needed — the cards themselves live on the server.
+type OwnCardMeta = { id: string; amountCents: number | null }
+
+const ownStorageKey = (slug: string) => `platform:own-cards:${slug}`
+
+function loadOwnMeta(slug: string): OwnCardMeta[] {
+  try {
+    const raw = window.localStorage.getItem(ownStorageKey(slug))
+    if (!raw) return []
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter(
+      (item): item is OwnCardMeta =>
+        typeof item === 'object' && item !== null && typeof (item as { id?: unknown }).id === 'string',
+    )
+  } catch {
+    return []
+  }
+}
+
+function saveOwnMeta(slug: string, metas: OwnCardMeta[]) {
+  try {
+    window.localStorage.setItem(ownStorageKey(slug), JSON.stringify(metas.slice(-40)))
+  } catch {
+    // Storage can be unavailable (private mode); the session state still covers this visit.
+  }
+}
+
+function formatAmount(cents: number): string {
+  return cents % 100 === 0 ? `$${cents / 100}` : `$${(cents / 100).toFixed(2)}`
+}
 
 function asContribution(card: PublicCard, frameId: string, creatorId: string): Contribution {
   return {
@@ -57,10 +107,11 @@ export function FramePage() {
     staleTime: 60_000,
   })
   const matColor = useMatColor(frame?.imageUrl ?? '')
-  const [ownCards, setOwnCards] = useState<Contribution[]>([])
+  const [sessionCards, setSessionCards] = useState<Contribution[]>([])
+  const [ownMeta, setOwnMeta] = useState<OwnCardMeta[]>(() => loadOwnMeta(slug))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [confirmation, setConfirmation] = useState<string | null>(null)
+  const [confirmation, setConfirmation] = useState<Confirmation>(null)
   const [justPlacedId, setJustPlacedId] = useState<string | null>(null)
   const [cardKey, setCardKey] = useState(0)
   const [composerOpen, setComposerOpen] = useState(false)
@@ -68,38 +119,109 @@ export function FramePage() {
   const [pendingPayment, setPendingPayment] = useState<PendingPayment>(null)
   const composerRef = useRef<HTMLDivElement | null>(null)
   const stackReturnRef = useRef<HTMLElement | null>(null)
-  const viewerRole: ViewerRole = 'public'
+  const greetedPendingRef = useRef(false)
+  const viewedRef = useRef<string | null>(null)
+
+  const creatorFirst = frame?.creator.name.split(' ')[0] ?? 'the creator'
 
   useEffect(() => {
-    if (!confirmation) return
+    setOwnMeta(loadOwnMeta(slug))
+    greetedPendingRef.current = false
+  }, [slug])
+
+  useEffect(() => {
+    if (!frame) return
+    document.title = `${frame.creator.name} — ${frame.title}`
+    return () => {
+      document.title = 'PLATFORM'
+    }
+  }, [frame])
+
+  useEffect(() => {
+    if (!frame || viewedRef.current === frame.id) return
+    viewedRef.current = frame.id
+    trackEvent({ type: 'frame_view', sourceSlug: slug, frameId: frame.id })
+  }, [frame, slug])
+
+  useEffect(() => {
+    if (!confirmation || confirmation.action) return
     const timeout = window.setTimeout(() => setConfirmation(null), 4200)
     return () => window.clearTimeout(timeout)
   }, [confirmation])
 
+  const metaById = useMemo(() => new Map(ownMeta.map((meta) => [meta.id, meta])), [ownMeta])
+
   const cards = useMemo(() => {
-    if (!frame) return ownCards
-    const serverCards = frame.cards.map((card) => asContribution(card, frame.id, frame.creator.slug))
-    const ownById = new Map(ownCards.map((card) => [card.id, card]))
-    const mergedServerCards = serverCards.map((card) => {
-      const ownCard = ownById.get(card.id)
-      if (!ownCard) return card
+    if (!frame) return sessionCards
+    const sessionById = new Map(sessionCards.map((card) => [card.id, card]))
+    const serverCards = frame.cards.map((card) => {
+      const contribution = asContribution(card, frame.id, frame.creator.slug)
+      const sessionCard = sessionById.get(card.id)
+      const meta = metaById.get(card.id)
       return {
-        ...card,
-        imageUrl: card.imageUrl ?? ownCard.imageUrl,
-        amountCents: ownCard.amountCents,
-        hasAmount: ownCard.hasAmount,
+        ...contribution,
+        // A just-uploaded photo previews from the local blob until the server copy lands.
+        imageUrl: contribution.imageUrl ?? sessionCard?.imageUrl,
+        // The server never exposes amounts publicly; the author's own card
+        // remembers what they attached.
+        amountCents: meta?.amountCents ?? sessionCard?.amountCents ?? contribution.amountCents,
+        hasAmount:
+          card.paymentStatus === 'succeeded'
+            ? true
+            : Boolean(meta?.amountCents ?? sessionCard?.amountCents) || contribution.hasAmount,
       }
     })
-    const serverIds = new Set(mergedServerCards.map((card) => card.id))
-    return [...mergedServerCards, ...ownCards.filter((card) => !serverIds.has(card.id))]
-  }, [frame, ownCards])
+    const serverIds = new Set(serverCards.map((card) => card.id))
+    return [...serverCards, ...sessionCards.filter((card) => !serverIds.has(card.id))]
+  }, [frame, sessionCards, metaById])
 
-  const ownIds = useMemo(() => new Set(ownCards.map((card) => card.id)), [ownCards])
-  const ownCardIds = useMemo(() => ownCards.map((card) => card.id), [ownCards])
+  const ownIds = useMemo(() => {
+    const ids = new Set(sessionCards.map((card) => card.id))
+    ownMeta.forEach((meta) => ids.add(meta.id))
+    return ids
+  }, [sessionCards, ownMeta])
+  const ownCardIds = useMemo(() => [...ownIds], [ownIds])
   const isOwn = (card: Contribution) => ownIds.has(card.id)
+  const viewerRole: ViewerRole = ownIds.size > 0 ? 'giver' : 'public'
+
+  // Own cards whose intended amount has not succeeded yet — the no-dead-ends set.
+  const pendingAmountIds = useMemo(() => {
+    if (!frame) return []
+    const statusById = new Map(frame.cards.map((card) => [card.id, card.paymentStatus]))
+    return ownMeta
+      .filter((meta) => {
+        if (!meta.amountCents) return false
+        const status = statusById.get(meta.id)
+        return status !== 'succeeded'
+      })
+      .map((meta) => meta.id)
+  }, [frame, ownMeta])
+
+  // After a reload with an amount still waiting, greet the visitor with the
+  // way to complete it — once, quietly.
+  useEffect(() => {
+    if (!frame || greetedPendingRef.current || pendingAmountIds.length === 0) return
+    if (justPlacedId || pendingPayment || confirmation) return
+    greetedPendingRef.current = true
+    const meta = ownMeta.find((m) => m.id === pendingAmountIds[0])
+    if (!meta?.amountCents) return
+    setConfirmation({
+      primary: `Your ${formatAmount(meta.amountCents)} hasn't gone with your card yet.`,
+      action: { label: 'Complete it', cardId: meta.id },
+    })
+  }, [frame, pendingAmountIds, ownMeta, justPlacedId, pendingPayment, confirmation])
+
+  const rememberOwnCard = (id: string, amountCents: number | null) => {
+    setOwnMeta((prev) => {
+      const next = [...prev.filter((meta) => meta.id !== id), { id, amountCents }]
+      saveOwnMeta(slug, next)
+      return next
+    })
+  }
 
   const openComposer = () => {
     setComposerOpen(true)
+    if (frame) trackEvent({ type: 'card_started', sourceSlug: slug, frameId: frame.id })
     window.setTimeout(() => {
       composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }, 80)
@@ -115,6 +237,57 @@ export function FramePage() {
       delay = Math.min(Math.round(delay * 1.25), 2200)
     }
     return false
+  }
+
+  const confirmPlaced = (amountCents: number | null, paid: boolean, cardId: string) => {
+    if (!amountCents) {
+      setConfirmation({
+        primary: `Your card is with ${creatorFirst}.`,
+        secondary: `${creatorFirst} will see your name.`,
+      })
+    } else if (paid) {
+      setConfirmation({
+        primary: `Your card is with ${creatorFirst}.`,
+        secondary: `Your ${formatAmount(amountCents)} went with it. A receipt is on its way.`,
+      })
+    } else {
+      setConfirmation({
+        primary: `Your card is with ${creatorFirst}.`,
+        secondary: `The ${formatAmount(amountCents)} didn't go with it yet.`,
+        action: { label: 'Complete it', cardId },
+      })
+    }
+  }
+
+  const startPayment = async (cardId: string, amountCents: number) => {
+    if (!frame) return
+    const intent = await createCardPaymentIntent(cardId)
+    if (intent.clientSecret.startsWith('sim_secret')) {
+      const paid = await pollPayment(cardId)
+      confirmPlaced(amountCents, paid, cardId)
+      await queryClient.invalidateQueries({ queryKey: ['frame', slug] })
+    } else {
+      setPendingPayment({
+        cardId,
+        clientSecret: intent.clientSecret,
+        creatorName: frame.creator.name,
+        amountCents,
+      })
+    }
+  }
+
+  const completeAmount = async (cardId: string) => {
+    const meta = metaById.get(cardId)
+    if (!frame || !meta?.amountCents) return
+    setConfirmation(null)
+    try {
+      await startPayment(cardId, meta.amountCents)
+    } catch {
+      setConfirmation({
+        primary: `The ${formatAmount(meta.amountCents)} didn't go with your card yet.`,
+        action: { label: 'Complete it', cardId },
+      })
+    }
   }
 
   const place = async (draft: CardDraft) => {
@@ -141,30 +314,29 @@ export function FramePage() {
         frame.id,
         frame.creator.slug,
       )
-      setOwnCards((prev) => [...prev, own])
+      setSessionCards((prev) => [...prev, own])
+      rememberOwnCard(created.id, draft.amountCents ?? null)
       setCardKey((key) => key + 1)
       setComposerOpen(false)
       setJustPlacedId(created.id)
 
       if (draft.amountCents) {
-        const intent = await createCardPaymentIntent(created.id)
-        if (intent.clientSecret.startsWith('sim_secret')) {
-          const paid = await pollPayment(created.id)
-          setConfirmation(paid ? 'You placed your card.' : 'Your card is here. The amount needs another try.')
-        } else {
-          setPendingPayment({
-            cardId: created.id,
-            clientSecret: intent.clientSecret,
-            creatorName: frame.creator.name,
-          })
+        try {
+          await startPayment(created.id, draft.amountCents)
+        } catch {
+          confirmPlaced(draft.amountCents, false, created.id)
         }
       } else {
-        setConfirmation('You placed your card.')
+        confirmPlaced(null, false, created.id)
       }
 
       await queryClient.invalidateQueries({ queryKey: ['frame', slug] })
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong.')
+      setError(
+        e instanceof Error && e.message
+          ? e.message
+          : "Your card didn't place. Check your connection and try again.",
+      )
       setComposerOpen(true)
     } finally {
       setBusy(false)
@@ -173,15 +345,18 @@ export function FramePage() {
 
   const closePayment = async () => {
     if (!pendingPayment) return
-    const paid = await pollPayment(pendingPayment.cardId)
+    const { cardId, amountCents } = pendingPayment
+    const paid = await pollPayment(cardId)
     setPendingPayment(null)
-    setConfirmation(paid ? 'You placed your card.' : 'Your card is here. The amount needs another try.')
+    confirmPlaced(amountCents, paid, cardId)
     await queryClient.invalidateQueries({ queryKey: ['frame', slug] })
   }
 
   const dismissPayment = () => {
+    if (!pendingPayment) return
+    const { cardId, amountCents } = pendingPayment
     setPendingPayment(null)
-    setConfirmation('Your card is here. The amount needs another try.')
+    confirmPlaced(amountCents, false, cardId)
   }
 
   const openStack = (card: Contribution, opener: HTMLElement) => {
@@ -232,8 +407,10 @@ export function FramePage() {
     )
   }
 
+  const cardCount = cards.filter((card) => card.visibility === 'public').length
+
   return (
-    <div className="relative min-h-full overflow-y-auto" style={{ background: matColor }}>
+    <div className="relative flex min-h-full flex-col overflow-y-auto" style={{ background: matColor }}>
       <div
         aria-hidden
         className="fixed inset-0 pointer-events-none"
@@ -243,14 +420,14 @@ export function FramePage() {
         }}
       />
 
-      <div className="relative max-w-3xl mx-auto px-7 md:px-12 pb-12 flex flex-col items-center">
-        <header className="text-center pt-12 md:pt-7 pb-5">
-          <p className="text-[11px] uppercase tracking-[0.16em] text-parchment/45">
+      <div className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col items-center px-7 pb-4 md:px-12">
+        <header className="text-center pt-10 pb-4 md:pt-6 md:pb-4">
+          <p className="text-[11px] uppercase tracking-[0.16em] text-parchment/58">
             {frame.creator.name}
           </p>
           <h1 className="mt-1 font-display text-2xl text-parchment/95 leading-none">{frame.title}</h1>
           {frame.context && (
-            <p className="text-[11px] tracking-[0.14em] text-parchment/50 mt-2">
+            <p className="text-[11px] tracking-[0.14em] text-parchment/58 mt-2">
               {frame.context}
             </p>
           )}
@@ -264,6 +441,7 @@ export function FramePage() {
               tile={92}
               viewerRole={viewerRole}
               isOwn={isOwn}
+              creatorFirst={creatorFirst}
               justPlacedId={justPlacedId}
               isGathering={stackState.isOpen}
               hideLeaveYours={composerOpen}
@@ -273,11 +451,18 @@ export function FramePage() {
           </div>
         </div>
 
+        <div className="mt-3 text-center md:mt-2">
+          <p className="text-[12px] tracking-[0.04em] text-parchment/72">
+            {cardCount > 0
+              ? `${cardCount} ${cardCount === 1 ? 'card is' : 'cards are'} with ${creatorFirst}.`
+              : 'Be the first to leave a card.'}
+          </p>
+        </div>
+
         <div className="w-full max-w-[21rem] mt-3 md:mt-2">
           <AnimatePresence initial={false} mode="wait">
             {composerOpen && (
               <motion.div
-                ref={composerRef}
                 key="composer"
                 layoutId="waiting-card"
                 initial={{ opacity: 0, y: 18, scale: 0.98 }}
@@ -286,16 +471,23 @@ export function FramePage() {
                 transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
                 className="w-full"
               >
-                <OpenContributionCard
-                  key={cardKey}
-                  busy={busy}
-                  error={error}
-                  onPlace={(draft) => void place(draft)}
-                />
+                {/* The ref lives on a plain child: a ref on the AnimatePresence
+                    child itself breaks its exit removal (framer-motion PopChild). */}
+                <div ref={composerRef}>
+                  <OpenContributionCard
+                    key={cardKey}
+                    busy={busy}
+                    error={error}
+                    creatorFirst={creatorFirst}
+                    onPlace={(draft) => void place(draft)}
+                  />
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
+
+        <Footer />
       </div>
 
       <AnimatePresence>
@@ -307,6 +499,8 @@ export function FramePage() {
             creatorName={frame.creator.name}
             viewerRole={viewerRole}
             isOwn={isOwn}
+            pendingAmountIds={pendingAmountIds}
+            onCompleteAmount={(cardId) => void completeAmount(cardId)}
             onClose={closeStack}
           />
         )}
@@ -314,17 +508,36 @@ export function FramePage() {
 
       <AnimatePresence>
         {confirmation && (
-          <motion.button
-            type="button"
+          <motion.div
+            role="status"
             onClick={() => setConfirmation(null)}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className="fixed bottom-8 left-1/2 z-30 -translate-x-1/2 bg-ink/95 border border-line rounded-[8px] px-6 py-3.5 text-center font-display text-base text-parchment/95"
+            className="fixed bottom-8 left-1/2 z-30 w-[min(88vw,22rem)] -translate-x-1/2 cursor-pointer rounded-[8px] border border-line bg-ink/95 px-6 py-4 text-center"
           >
-            {confirmation}
-          </motion.button>
+            <p className="font-display text-base leading-snug text-parchment/95">
+              {confirmation.primary}
+            </p>
+            {confirmation.secondary && (
+              <p className="mt-1 text-[12px] leading-snug text-parchment/68">
+                {confirmation.secondary}
+              </p>
+            )}
+            {confirmation.action && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  void completeAmount(confirmation.action!.cardId)
+                }}
+                className="mt-3 rounded-[6px] border border-parchment/35 px-4 py-1.5 font-display text-[13px] text-parchment transition-colors hover:border-parchment/70"
+              >
+                {confirmation.action.label}
+              </button>
+            )}
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -334,28 +547,32 @@ export function FramePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/70 px-5 py-10 overflow-y-auto"
+            className="fixed inset-0 z-40 overflow-y-auto bg-black/70 px-5 py-10 backdrop-blur-sm"
           >
-            <div className="mx-auto max-w-md border border-line bg-ink p-5">
+            <div
+              className="mx-auto max-w-md rounded-[11px] border border-[#d5c7ad]/78 p-6 text-[#211c16]"
+              style={{
+                background:
+                  'linear-gradient(145deg, rgba(244,237,224,0.99), rgba(231,222,204,0.98) 58%, rgba(219,208,187,0.96))',
+                boxShadow:
+                  '0 1px 0 rgba(255,255,255,0.65) inset, 0 34px 84px -20px rgba(0,0,0,0.9)',
+              }}
+            >
               <div className="mb-5 flex items-start justify-between gap-4">
-                <div>
-                  <p className="font-display text-xl text-parchment">Finish amount</p>
-                  <p className="mt-1 text-sm leading-relaxed text-muted">
-                    Your card has been placed. Finish the amount here when you are ready.
-                  </p>
-                </div>
+                <p className="font-display text-xl text-[#211c16]/90">Complete the amount</p>
                 <button
                   type="button"
                   onClick={dismissPayment}
-                  className="shrink-0 border border-line px-3 py-1.5 text-sm text-muted hover:text-parchment"
+                  className="shrink-0 rounded-[6px] border border-[#211c16]/25 px-3 py-1.5 text-sm text-[#211c16]/72 transition-colors hover:border-[#211c16]/50 hover:text-[#211c16]"
                 >
-                  Close
+                  Not now
                 </button>
               </div>
               <PaymentStep
                 stripePromise={getStripePromise()}
                 clientSecret={pendingPayment.clientSecret}
                 artistName={pendingPayment.creatorName}
+                amountCents={pendingPayment.amountCents}
                 onSucceeded={() => void closePayment()}
               />
             </div>

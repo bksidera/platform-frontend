@@ -11,6 +11,8 @@ interface Props {
   creatorName: string
   viewerRole: ViewerRole
   isOwn: (c: Contribution) => boolean
+  pendingAmountIds?: string[]
+  onCompleteAmount?: (cardId: string) => void
   onClose: () => void
 }
 
@@ -64,6 +66,8 @@ export function CardStackViewer({
   creatorName,
   viewerRole,
   isOwn,
+  pendingAmountIds = [],
+  onCompleteAmount,
   onClose,
 }: Props) {
   const reducedMotion = useReducedMotion()
@@ -187,6 +191,15 @@ export function CardStackViewer({
               viewerRole={viewerRole}
               isOwn={isOwn(current)}
               surface="paper"
+              amountPending={pendingAmountIds.includes(current.id)}
+              onCompleteAmount={
+                onCompleteAmount && pendingAmountIds.includes(current.id)
+                  ? () => {
+                      onClose()
+                      onCompleteAmount(current.id)
+                    }
+                  : undefined
+              }
             />
           </motion.article>
         </AnimatePresence>
@@ -214,7 +227,7 @@ export function CardStackViewer({
             type="button"
             onClick={onClose}
             aria-label="Set the card down"
-            className="px-6 py-1 text-lg leading-none text-parchment/28 transition hover:text-parchment/55 focus:outline-none focus-visible:text-parchment/75"
+            className="px-6 py-1 text-lg leading-none text-parchment/50 transition hover:text-parchment/75 focus:outline-none focus-visible:text-parchment/85"
           >
             ⌄
           </button>

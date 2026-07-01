@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { AboutPage } from './pages/AboutPage'
 import { ArchivePage } from './pages/ArchivePage'
 import { FramePage } from './pages/FramePage'
 import { AuthVerifyPage } from './pages/AuthVerifyPage'
@@ -15,6 +16,7 @@ export function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/dashboard/onboarding" element={<DashboardPage />} />
         <Route path="/m/:slug" element={<FramePage />} />
+        <Route path="/about" element={<AboutPage />} />
         {/* /me (giver profile) arrives with identity claiming (B4/B6). */}
         <Route path="/me" element={<DashboardPage />} />
         <Route path="/:slug" element={<ArchivePage />} />

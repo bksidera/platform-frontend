@@ -8,6 +8,7 @@ interface Props {
   tile: number
   viewerRole: ViewerRole
   isOwn: (c: Contribution) => boolean
+  creatorFirst?: string
   justPlacedId?: string | null
   isGathering?: boolean
   hideLeaveYours?: boolean
@@ -385,32 +386,57 @@ function MoundCard({
 
 function LeaveYoursCard({
   tile,
+  creatorFirst,
   onOpen,
 }: {
   tile: number
+  creatorFirst?: string
   onOpen: () => void
 }) {
-  const size = Math.round(tile * 0.84)
+  const reducedMotion = useReducedMotion()
+  // The one blank card in the room — blankness is the invitation. Full tile
+  // size and the lightest paper on the page, so it reads as waiting, not
+  // discarded. It breathes almost imperceptibly; the work itself never moves.
+  const size = Math.round(tile * 0.96)
 
   return (
-    <motion.button
-      layoutId="waiting-card"
-      type="button"
-      onClick={onOpen}
-      aria-label="Leave a card"
-      className="pointer-events-auto flex flex-col items-center justify-center gap-1 overflow-hidden rounded-[7px] border border-[#d8ceb9]/68 p-2.5
-                 text-[#211c16] shadow-[0_1px_0_rgba(255,255,255,0.58)_inset,0_5px_12px_rgba(0,0,0,0.22)]
-                 transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-parchment/70"
-      style={{
-        width: size,
-        height: Math.round(size * CARD_ASPECT),
-        background:
-          'linear-gradient(145deg, rgba(244,237,224,0.99), rgba(231,222,204,0.98) 58%, rgba(220,209,188,0.96))',
-      }}
+    // The idle float lives on a wrapper: an infinite animation on the
+    // layoutId element itself never settles, which blocks the composer's
+    // AnimatePresence exit from completing (shared-layout lead never resolves).
+    <motion.div
+      animate={reducedMotion ? undefined : { y: [0, -2.5, 0] }}
+      transition={
+        reducedMotion
+          ? undefined
+          : { duration: 5.6, repeat: Infinity, ease: 'easeInOut', repeatDelay: 1.8 }
+      }
     >
-      <span className="font-display text-[13px] leading-tight text-[#3b342b]/76">Leave yours</span>
-      <span className="text-[19px] font-light leading-none text-[#6e6558]/62">+</span>
-    </motion.button>
+      <motion.button
+        layoutId="waiting-card"
+        type="button"
+        onClick={onOpen}
+        aria-label={creatorFirst ? `Leave a card for ${creatorFirst}` : 'Leave a card'}
+        className="pointer-events-auto flex flex-col items-center justify-center gap-1 overflow-hidden rounded-[7px] border border-[#ddd3bf]/78 p-2.5
+                   text-[#211c16] shadow-[0_1px_0_rgba(255,255,255,0.68)_inset,0_9px_20px_rgba(0,0,0,0.3),0_2px_6px_rgba(0,0,0,0.18)]
+                   transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-parchment/70"
+        style={{
+          width: size,
+          height: Math.round(size * CARD_ASPECT),
+          background:
+            'linear-gradient(145deg, rgba(249,243,231,0.99), rgba(238,230,213,0.98) 58%, rgba(227,217,197,0.97))',
+        }}
+      >
+        <span className="px-1 text-center font-display text-[13px] leading-tight text-[#3b342b]/88">
+          Leave a card
+        </span>
+        {creatorFirst && (
+          <span className="max-w-full truncate text-[10px] leading-tight text-[#3b342b]/54">
+            for {creatorFirst}
+          </span>
+        )}
+        <span className="text-[17px] font-light leading-none text-[#6e6558]/70">+</span>
+      </motion.button>
+    </motion.div>
   )
 }
 
@@ -418,6 +444,7 @@ export function ContributionCardRail({
   cards,
   tile,
   isOwn,
+  creatorFirst,
   justPlacedId,
   isGathering = false,
   hideLeaveYours = false,
@@ -481,7 +508,7 @@ export function ContributionCardRail({
 
       {!hideLeaveYours && !isGathering && (
         <motion.div
-          className={count > 0 ? 'relative z-10 mt-7 md:mt-7' : 'relative z-10 mt-0'}
+          className={count > 0 ? 'relative z-10 mt-4 md:mt-5' : 'relative z-10 mt-0'}
           animate={{
             opacity: isGathering ? 0 : 1,
             rotate: 0,
@@ -489,7 +516,7 @@ export function ContributionCardRail({
           }}
           transition={{ duration: reducedMotion ? 0 : 0.38, ease: [0.22, 1, 0.36, 1] }}
         >
-          <LeaveYoursCard tile={tile} onOpen={onLeaveYours} />
+          <LeaveYoursCard tile={tile} creatorFirst={creatorFirst} onOpen={onLeaveYours} />
         </motion.div>
       )}
     </div>
