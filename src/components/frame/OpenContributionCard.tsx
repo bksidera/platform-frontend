@@ -281,6 +281,87 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
         )}
       </label>
 
+      <div className="mb-4 space-y-2 border-b border-[#211c16]/10 pb-3.5" data-composer-section>
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-[12px] leading-tight text-[#211c16]/68">Amount inside the card</span>
+          <span className="shrink-0 text-[10px] leading-tight text-[#211c16]/46">optional</span>
+        </div>
+        <div className="space-y-2">
+          <div className="grid grid-cols-4 gap-1.5">
+            {PRESETS.map((cents) => (
+              <button
+                key={cents}
+                type="button"
+                onPointerDown={blurActiveTextField}
+                onClick={() => selectAmount(cents)}
+                aria-pressed={amountCents === cents && !customOpen && !justCard}
+                className={`min-h-8 rounded-[5px] border border-transparent px-2 py-1 text-[13px] transition-colors ${
+                  amountCents === cents && !customOpen && !justCard ? CHIP_SELECTED : CHIP_IDLE
+                }`}
+              >
+                {cents === 1000 ? (
+                  <span className="inline-flex items-baseline justify-center gap-1">
+                    <span>$10</span>
+                    <span
+                      className={
+                        amountCents === cents && !customOpen && !justCard
+                          ? 'text-[9px] text-[#f3ecde]/62'
+                          : 'text-[9px] text-[#211c16]/42'
+                      }
+                    >
+                      usual
+                    </span>
+                  </span>
+                ) : (
+                  `$${cents / 100}`
+                )}
+              </button>
+            ))}
+            {customOpen && !justCard ? (
+              <label className={`flex min-h-8 items-center justify-center gap-1 rounded-[5px] px-2 py-1 text-[13px] ${CHIP_SELECTED}`}>
+                <span className="text-[#f3ecde]/62">$</span>
+                <input
+                  ref={customInputRef}
+                  inputMode="decimal"
+                  aria-label="Custom amount"
+                  placeholder="Other"
+                  value={custom}
+                  onFocus={scrollFocusedFieldIntoView}
+                  onBlur={clearFallbackKeyboardSpace}
+                  onChange={(e) => {
+                    setCustom(e.target.value)
+                    const d = parseFloat(e.target.value)
+                    setAmountCents(d >= 1 ? Math.round(d * 100) : null)
+                  }}
+                  className="min-w-0 flex-1 bg-transparent text-center text-inherit placeholder:text-[#f3ecde]/55 focus:outline-none"
+                />
+              </label>
+            ) : (
+              <button
+                type="button"
+                onPointerDown={blurActiveTextField}
+                onClick={openCustom}
+                aria-pressed={false}
+                className={`min-h-8 rounded-[5px] border border-transparent px-2 py-1 text-[13px] transition-colors ${CHIP_IDLE}`}
+              >
+                Other
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            onPointerDown={blurActiveTextField}
+            onClick={selectJustCard}
+            aria-pressed={justCard}
+            className={`block text-[11px] transition-colors ${
+              justCard ? 'text-[#211c16] underline underline-offset-4' : 'text-[#211c16]/56 hover:text-[#211c16]/82'
+            }`}
+          >
+            Card without amount
+          </button>
+        </div>
+      </div>
+
       <div className="mb-4" data-composer-section>
         {imageUrl ? (
           <div className="relative h-11 w-11 rotate-[-1.5deg] rounded-[4px] bg-[#fbf5e8] p-1 shadow-[0_1px_2px_rgba(0,0,0,0.22)]">
@@ -333,72 +414,6 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
             Photos appear with the card. The creator can hold them back.
           </p>
         )}
-      </div>
-
-      <div className="space-y-2" data-composer-section>
-        <div className="flex items-baseline justify-between gap-3">
-          <span className="text-[12px] leading-tight text-[#211c16]/68">Amount inside the card</span>
-          <span className="shrink-0 text-[10px] leading-tight text-[#211c16]/46">optional</span>
-        </div>
-        <div className="space-y-2">
-          <div className="grid grid-cols-4 gap-1.5">
-            {PRESETS.map((cents) => (
-              <button
-                key={cents}
-                type="button"
-                onPointerDown={blurActiveTextField}
-                onClick={() => selectAmount(cents)}
-                aria-pressed={amountCents === cents && !customOpen && !justCard}
-                className={`min-h-8 rounded-[5px] border border-transparent px-2 py-1 text-[13px] transition-colors ${
-                  amountCents === cents && !customOpen && !justCard ? CHIP_SELECTED : CHIP_IDLE
-                }`}
-              >
-                ${cents / 100}
-              </button>
-            ))}
-            {customOpen && !justCard ? (
-              <label className={`flex min-h-8 items-center justify-center gap-1 rounded-[5px] px-2 py-1 text-[13px] ${CHIP_SELECTED}`}>
-                <span className="text-[#f3ecde]/62">$</span>
-                <input
-                  ref={customInputRef}
-                  inputMode="decimal"
-                  aria-label="Custom amount"
-                  placeholder="Other"
-                  value={custom}
-                  onFocus={scrollFocusedFieldIntoView}
-                  onBlur={clearFallbackKeyboardSpace}
-                  onChange={(e) => {
-                    setCustom(e.target.value)
-                    const d = parseFloat(e.target.value)
-                    setAmountCents(d >= 1 ? Math.round(d * 100) : null)
-                  }}
-                  className="min-w-0 flex-1 bg-transparent text-center text-inherit placeholder:text-[#f3ecde]/55 focus:outline-none"
-                />
-              </label>
-            ) : (
-              <button
-                type="button"
-                onPointerDown={blurActiveTextField}
-                onClick={openCustom}
-                aria-pressed={false}
-                className={`min-h-8 rounded-[5px] border border-transparent px-2 py-1 text-[13px] transition-colors ${CHIP_IDLE}`}
-              >
-                Other
-              </button>
-            )}
-          </div>
-          <button
-            type="button"
-            onPointerDown={blurActiveTextField}
-            onClick={selectJustCard}
-            aria-pressed={justCard}
-            className={`block text-[11px] transition-colors ${
-              justCard ? 'text-[#211c16] underline underline-offset-4' : 'text-[#211c16]/56 hover:text-[#211c16]/82'
-            }`}
-          >
-            Card without amount
-          </button>
-        </div>
       </div>
 
       <label className={`mt-4 block pb-1 ${RULED}`} data-composer-section>
