@@ -42,13 +42,11 @@ const cardStyle = {
 // without darkness, so the chosen amount stays clearly lighter than the
 // dark "Place card" button (the only truly dark object).
 const CHIP_SELECTED =
-  'bg-[#d6c6a4] text-[#211c16] font-medium shadow-[inset_0_1px_2px_rgba(33,28,22,0.18)]'
+  'bg-[#211c16] text-[#f3ecde] shadow-[0_5px_12px_rgba(33,28,22,0.16)]'
 // The resting "empty cup": the same gold chip container, barely there, so the
 // row reads as "pick one" before anything is chosen — without pre-selection.
 const CHIP_IDLE =
-  'bg-[#d6c6a4]/35 text-[#211c16]/74 hover:bg-[#d6c6a4]/60 hover:text-[#211c16]/88'
-const CHIP_RECOMMENDED =
-  'relative after:absolute after:-top-1.5 after:left-1/2 after:-translate-x-1/2 after:rounded-full after:bg-[#211c16]/70 after:px-1.5 after:py-0.5 after:text-[8px] after:uppercase after:tracking-[0.08em] after:text-[#f2ebdd] after:content-["usual"]'
+  'bg-[#211c16]/[0.045] text-[#211c16]/70 hover:bg-[#211c16]/[0.075] hover:text-[#211c16]/88'
 
 // A ruled card line beneath each writing field — the card's own anatomy doing
 // the work a form border would otherwise do.
@@ -238,17 +236,17 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
   return (
     <motion.div
       layout
-      className="w-full rounded-[11px] border border-[#d5c7ad]/78 px-5 pt-4 pb-4 text-[#211c16]"
+      className="w-full rounded-[11px] border border-[#d5c7ad]/78 px-5 pb-4 pt-4 text-[#211c16]"
       style={{
         ...cardStyle,
         marginBottom: keyboardBottomSpace ? `${keyboardBottomSpace}px` : undefined,
       }}
     >
-      <div className="mb-4">
-        <p className="font-display text-[20px] leading-none text-[#211c16]/88">Leave your card</p>
+      <div className="mb-3.5">
+        <p className="font-display text-[19px] leading-none text-[#211c16]/90">Leave your card</p>
       </div>
 
-      <label className={`block mb-3 pb-1 ${RULED}`} data-composer-section>
+      <label className={`mb-3 block pb-1 ${RULED}`} data-composer-section>
         <span className="sr-only">Your name</span>
         <input
           autoFocus={!isMobileViewport()}
@@ -259,22 +257,22 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
           onFocus={scrollFocusedFieldIntoView}
           onBlur={clearFallbackKeyboardSpace}
           onChange={(e) => setName(e.target.value.slice(0, NAME_LIMIT))}
-          className="w-full rounded-none border-0 bg-transparent px-0 py-0 font-display text-[16px] leading-6 text-[#211c16]/82 placeholder:text-[#6b5f4d] focus:outline-none"
+          className="w-full rounded-none border-0 bg-transparent px-0 py-0 font-display text-[15px] leading-6 text-[#211c16]/82 placeholder:text-[#6b5f4d]/82 focus:outline-none"
         />
       </label>
 
-      <label className={`block mb-4 pb-1 ${RULED}`} data-composer-section>
+      <label className={`mb-3.5 block pb-1 ${RULED}`} data-composer-section>
         <span className="sr-only">Your card</span>
         <textarea
           maxLength={NOTE_LIMIT}
-          rows={3}
+          rows={2}
           aria-label="Your card"
           placeholder="What stayed with you?"
           value={note}
           onFocus={scrollFocusedFieldIntoView}
           onBlur={clearFallbackKeyboardSpace}
           onChange={(e) => setNote(e.target.value.slice(0, NOTE_LIMIT))}
-          className="w-full resize-none bg-transparent px-0 py-0 font-display text-[16px] leading-6 text-[#211c16]/82 placeholder:text-[#6b5f4d] focus:outline-none"
+          className="w-full resize-none bg-transparent px-0 py-0 font-display text-[15px] leading-6 text-[#211c16]/82 placeholder:text-[#6b5f4d]/82 focus:outline-none"
         />
         {note.length >= 120 && (
           <span className="mt-1 block text-right text-[10px] text-[#211c16]/62">
@@ -285,7 +283,7 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
 
       <div className="mb-4" data-composer-section>
         {imageUrl ? (
-          <div className="relative h-14 w-14 rotate-[-1.5deg] rounded-[4px] bg-[#fbf5e8] p-1 shadow-[0_1px_2px_rgba(0,0,0,0.22)]">
+          <div className="relative h-11 w-11 rotate-[-1.5deg] rounded-[4px] bg-[#fbf5e8] p-1 shadow-[0_1px_2px_rgba(0,0,0,0.22)]">
             <img
               src={imageUrl}
               alt=""
@@ -306,13 +304,13 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
           </div>
         ) : (
           <label
-            className="group inline-flex cursor-pointer items-center gap-3 text-left"
+            className="group inline-flex cursor-pointer items-center gap-2.5 text-left"
             onPointerDown={blurActiveTextField}
           >
-            <span className="flex h-14 w-14 -rotate-[1.5deg] items-center justify-center rounded-[4px] border border-[#211c16]/15 bg-[#fbf5e8]/40 text-[18px] font-light leading-none text-[#211c16]/38 shadow-[0_1px_2px_rgba(0,0,0,0.06)] transition-colors group-hover:border-[#211c16]/28 group-hover:text-[#211c16]/55">
+            <span className="flex h-11 w-11 -rotate-[1.5deg] items-center justify-center rounded-[4px] border border-[#211c16]/12 bg-[#fbf5e8]/35 text-[17px] font-light leading-none text-[#211c16]/36 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-colors group-hover:border-[#211c16]/24 group-hover:text-[#211c16]/55">
               +
             </span>
-            <span className="font-display text-[14px] text-[#211c16]/68 transition-colors group-hover:text-[#211c16]/85">
+            <span className="text-[13px] text-[#211c16]/68 transition-colors group-hover:text-[#211c16]/85">
               Add a photo
             </span>
             <input
@@ -337,17 +335,13 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
         )}
       </div>
 
-      <div className="space-y-2.5" data-composer-section>
-        <div className="mb-2.5">
-          <span className="block font-display text-[14px] leading-tight text-[#211c16]/70">
-            Add an amount to the card.
-          </span>
-          <p className="mt-0.5 text-[11px] leading-snug text-[#211c16]/58">
-            Optional. Only the creator sees it.
-          </p>
+      <div className="space-y-2" data-composer-section>
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-[12px] leading-tight text-[#211c16]/68">Amount inside the card</span>
+          <span className="shrink-0 text-[10px] leading-tight text-[#211c16]/46">optional</span>
         </div>
-        <div className="space-y-1.5">
-          <div className="grid grid-cols-4 gap-1">
+        <div className="space-y-2">
+          <div className="grid grid-cols-4 gap-1.5">
             {PRESETS.map((cents) => (
               <button
                 key={cents}
@@ -355,16 +349,16 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
                 onPointerDown={blurActiveTextField}
                 onClick={() => selectAmount(cents)}
                 aria-pressed={amountCents === cents && !customOpen && !justCard}
-                className={`min-h-9 rounded-[5px] border border-transparent px-2 py-1.5 font-display text-[14px] transition-colors ${
+                className={`min-h-8 rounded-[5px] border border-transparent px-2 py-1 text-[13px] transition-colors ${
                   amountCents === cents && !customOpen && !justCard ? CHIP_SELECTED : CHIP_IDLE
-                } ${cents === 1000 && amountCents !== cents && !customOpen && !justCard ? CHIP_RECOMMENDED : ''}`}
+                }`}
               >
                 ${cents / 100}
               </button>
             ))}
             {customOpen && !justCard ? (
-              <label className={`flex min-h-9 items-center justify-center gap-1 rounded-[5px] px-2 py-1.5 font-display text-[14px] ${CHIP_SELECTED}`}>
-                <span className="text-[#211c16]/62">$</span>
+              <label className={`flex min-h-8 items-center justify-center gap-1 rounded-[5px] px-2 py-1 text-[13px] ${CHIP_SELECTED}`}>
+                <span className="text-[#f3ecde]/62">$</span>
                 <input
                   ref={customInputRef}
                   inputMode="decimal"
@@ -378,7 +372,7 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
                     const d = parseFloat(e.target.value)
                     setAmountCents(d >= 1 ? Math.round(d * 100) : null)
                   }}
-                  className="min-w-0 flex-1 bg-transparent text-center text-[#211c16]/82 placeholder:text-[#211c16]/52 focus:outline-none"
+                  className="min-w-0 flex-1 bg-transparent text-center text-inherit placeholder:text-[#f3ecde]/55 focus:outline-none"
                 />
               </label>
             ) : (
@@ -387,7 +381,7 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
                 onPointerDown={blurActiveTextField}
                 onClick={openCustom}
                 aria-pressed={false}
-                className={`min-h-9 rounded-[5px] border border-transparent px-2 py-1.5 font-display text-[14px] transition-colors ${CHIP_IDLE}`}
+                className={`min-h-8 rounded-[5px] border border-transparent px-2 py-1 text-[13px] transition-colors ${CHIP_IDLE}`}
               >
                 Other
               </button>
@@ -398,8 +392,8 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
             onPointerDown={blurActiveTextField}
             onClick={selectJustCard}
             aria-pressed={justCard}
-            className={`mx-auto block min-h-8 rounded-[5px] border border-transparent px-4 py-1.5 text-[12px] transition-colors ${
-              justCard ? CHIP_SELECTED : CHIP_IDLE
+            className={`block text-[11px] transition-colors ${
+              justCard ? 'text-[#211c16] underline underline-offset-4' : 'text-[#211c16]/56 hover:text-[#211c16]/82'
             }`}
           >
             Card without amount
@@ -407,7 +401,7 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
         </div>
       </div>
 
-      <label className={`mt-5 block pb-1 ${RULED}`} data-composer-section>
+      <label className={`mt-4 block pb-1 ${RULED}`} data-composer-section>
         <span className="sr-only">Your email</span>
         <input
           type="email"
@@ -417,19 +411,19 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
           onFocus={scrollFocusedFieldIntoView}
           onBlur={clearFallbackKeyboardSpace}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-none border-0 bg-transparent px-0 py-0 font-display text-[16px] leading-6 text-[#211c16]/82 placeholder:text-[#6b5f4d] focus:outline-none"
+          className="w-full rounded-none border-0 bg-transparent px-0 py-0 font-display text-[15px] leading-6 text-[#211c16]/82 placeholder:text-[#6b5f4d]/82 focus:outline-none"
         />
       </label>
-      <p className="mt-1.5 text-[11px] leading-snug text-[#211c16]/68">
+      <p className="mt-1.5 text-[10px] leading-snug text-[#211c16]/58">
         {creatorFirst} sees your name and note. Your email stays private.
       </p>
 
-      <label className="mt-4 flex cursor-pointer items-start gap-2 text-[11px] leading-snug text-[#211c16]/68">
+      <label className="mt-3.5 flex cursor-pointer items-start gap-2 text-[10px] leading-snug text-[#211c16]/58">
         <input
           type="checkbox"
           checked={isPrivate}
           onChange={(e) => setIsPrivate(e.target.checked)}
-          className="mt-0.5 h-3.5 w-3.5 accent-[#211c16]"
+          className="mt-0.5 h-3 w-3 accent-[#211c16]"
         />
         <span>Keep this card between you and the creator.</span>
       </label>
@@ -437,13 +431,13 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
       {error && <p className="mt-3 text-xs text-[#7a2e22]">{error}</p>}
 
       {helperText && (
-        <p className="mt-4 text-center text-[11px] leading-snug text-[#211c16]/68">
+        <p className="mt-3.5 text-center text-[10px] leading-snug text-[#211c16]/58">
           {helperText}
         </p>
       )}
 
       {selectedAmountText && (
-        <p className="mt-4 text-center text-[11px] leading-snug text-[#211c16]/68">
+        <p className="mt-3.5 text-center text-[10px] leading-snug text-[#211c16]/58">
           {selectedAmountText}
         </p>
       )}
@@ -453,7 +447,7 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
         disabled={busy || !canPlace}
         onPointerDown={blurActiveTextField}
         onClick={place}
-        className={`mt-5 w-full rounded-[9px] border py-3 font-display text-base transition-colors ${
+        className={`mt-4 w-full rounded-[7px] border py-2.5 font-display text-[15px] transition-colors ${
           placeButtonActive
             ? 'border-[#211c16] bg-[#211c16] text-[#f2ebdd] shadow-[0_8px_18px_rgba(0,0,0,0.18)]'
             : 'border-[#211c16]/10 bg-[#211c16]/5 text-[#211c16]/45 shadow-none'
