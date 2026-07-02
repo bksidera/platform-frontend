@@ -169,7 +169,7 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
   const canPlace = hasStartedCard && hasEmail && hasCompletionChoice
   const selectedAmountText = amountSelected && amountCents ? `${formatAmount(amountCents)} will go with it.` : null
   const helperText = !hasStartedCard
-    ? 'Start with a name or a few words.'
+    ? 'Add your name, a few words, and a photo or payment to send your card.'
     : !hasEmail
       ? 'Add your email to place the card.'
       : !hasCompletionChoice
@@ -362,7 +362,7 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
           onPointerDown={blurActiveTextField}
           onClick={() => setAmountOpen((open) => !open)}
           aria-expanded={amountOpen}
-          className={`inline-flex min-h-8 w-full items-center justify-between rounded-full border px-3 py-1.5 text-[12px] transition-colors ${
+          className={`mx-auto inline-flex min-h-8 w-[min(100%,13.5rem)] items-center justify-between rounded-full border px-3 py-1.5 text-[12px] transition-colors ${
             amountSelected
               ? 'border-[#211c16] bg-[#211c16] text-[#f3ecde] shadow-[0_5px_12px_rgba(33,28,22,0.16)]'
               : justCard
@@ -422,7 +422,7 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
                   </button>
                 ))}
               </div>
-              <div className="grid grid-cols-2 gap-1.5">
+              <div className="mx-auto grid w-[min(100%,14rem)] grid-cols-2 gap-1.5">
                 {customOpen && !justCard ? (
                   <label className={`flex min-h-8 items-center justify-center gap-1 rounded-[5px] px-2 py-1 text-[13px] ${CHIP_SELECTED}`}>
                     <span className="text-[#f3ecde]/62">$</span>
