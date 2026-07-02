@@ -148,6 +148,7 @@ function useMobileKeyboardAwareComposer() {
 
 export function OpenContributionCard({ busy, error, onPlace }: Props) {
   const customInputRef = useRef<HTMLInputElement | null>(null)
+  const amountButtonRef = useRef<HTMLButtonElement | null>(null)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [note, setNote] = useState('')
@@ -167,16 +168,15 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
   const hasStartedCard = hasNote || hasDisplayName
   const hasCompletionChoice = amountSelected || justCard
   const canPlace = hasStartedCard && hasEmail && hasCompletionChoice
+  const needsCardContentChoice = hasStartedCard && hasEmail && !hasCompletionChoice
   const selectedAmountText = amountSelected && amountCents ? `${formatAmount(amountCents)} will go with it.` : null
   const helperText = !hasStartedCard
     ? 'Add your name, a few words, and a photo or payment to send your card.'
     : !hasEmail
       ? 'Add your email to place the card.'
-      : !hasCompletionChoice
-        ? 'Select an amount, or choose Just the Card.'
-        : null
-  const primaryButtonActive = hasStartedCard && hasEmail && hasCompletionChoice && !busy
-  const placeLabel = busy ? 'Placing card...' : 'Place card'
+      : null
+  const primaryButtonActive = (canPlace || needsCardContentChoice) && !busy
+  const placeLabel = busy ? 'Placing card...' : needsCardContentChoice ? 'Choose what goes inside' : 'Place card'
   const {
     keyboardBottomSpace,
     scrollFocusedFieldIntoView,
@@ -209,6 +209,24 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
       amountCents: justCard ? null : amountCents,
       visibility: isPrivate ? 'private' : 'public',
     })
+  }
+
+  const guideCardContentChoice = () => {
+    blurActiveTextField()
+    setAmountOpen(true)
+    window.requestAnimationFrame(() => {
+      amountButtonRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      amountButtonRef.current?.focus({ preventScroll: true })
+    })
+  }
+
+  const handlePrimaryAction = () => {
+    if (canPlace) {
+      place()
+      return
+    }
+
+    if (needsCardContentChoice) guideCardContentChoice()
   }
 
   const selectAmount = (cents: number) => {
@@ -356,6 +374,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
         </div>
 
         <motion.button
+          ref={amountButtonRef}
           layout
           type="button"
           onPointerDown={blurActiveTextField}
@@ -366,7 +385,9 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
               ? 'border-[#211c16] bg-[#211c16] text-[#f3ecde] shadow-[0_5px_12px_rgba(33,28,22,0.16)]'
               : justCard
                 ? 'border-[#211c16]/12 bg-[#211c16]/[0.05] text-[#211c16]/68'
-                : 'border-[#211c16]/10 bg-[#211c16]/[0.035] text-[#211c16]/58 hover:bg-[#211c16]/[0.065]'
+                : needsCardContentChoice
+                  ? 'border-[#211c16]/30 bg-[#211c16]/[0.075] text-[#211c16]/82 shadow-[0_5px_14px_rgba(33,28,22,0.10)] hover:bg-[#211c16]/[0.1]'
+                  : 'border-[#211c16]/10 bg-[#211c16]/[0.035] text-[#211c16]/58 hover:bg-[#211c16]/[0.065]'
           }`}
         >
           <span>
@@ -378,6 +399,12 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
           </span>
           <span className={amountSelected ? 'text-[#f3ecde]/42' : 'text-[#211c16]/34'}>⌄</span>
         </motion.button>
+
+        {needsCardContentChoice && (
+          <p className="mt-2 text-center text-[10px] leading-snug text-[#211c16]/58">
+            Select an amount, or choose Just the Card.
+          </p>
+        )}
 
         <AnimatePresence initial={false}>
           {amountOpen && (
@@ -497,7 +524,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
         type="button"
         disabled={busy || !primaryButtonActive}
         onPointerDown={blurActiveTextField}
-        onClick={place}
+        onClick={handlePrimaryAction}
         className={`mt-4 w-full rounded-[7px] border py-2.5 font-display text-[15px] transition-colors ${
           primaryButtonActive
             ? 'border-[#211c16] bg-[#211c16] text-[#f2ebdd] shadow-[0_8px_18px_rgba(0,0,0,0.18)]'
