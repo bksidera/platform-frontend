@@ -146,7 +146,7 @@ function useMobileKeyboardAwareComposer() {
   }
 }
 
-export function OpenContributionCard({ busy, error, creatorFirst = 'the creator', onPlace }: Props) {
+export function OpenContributionCard({ busy, error, onPlace }: Props) {
   const customInputRef = useRef<HTMLInputElement | null>(null)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -247,7 +247,7 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
       }}
     >
       <div className="mb-3.5">
-        <p className="font-display text-[19px] leading-none text-[#211c16]/90">Leave your card</p>
+        <p className="font-display text-[19px] leading-none text-[#211c16]/90">Your card</p>
       </div>
 
       <div className="mb-3 grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-3" data-composer-section>
@@ -351,9 +351,8 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
       </div>
 
       <div className="border-y border-[#211c16]/10 py-3" data-composer-section>
-        <div className="mb-2 flex items-baseline justify-between gap-3">
+        <div className="mb-2">
           <span className="text-[10px] uppercase tracking-[0.12em] text-[#211c16]/42">Inside the card</span>
-          <span className="shrink-0 text-[10px] text-[#211c16]/38">optional</span>
         </div>
 
         <motion.button
@@ -469,10 +468,6 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
           )}
         </AnimatePresence>
       </div>
-
-      <p className="mt-1.5 text-[10px] leading-snug text-[#211c16]/58">
-        {creatorFirst} sees your name and note. Your email stays private.
-      </p>
 
       <label className="mt-3.5 flex cursor-pointer items-start gap-2 text-[10px] leading-snug text-[#211c16]/58">
         <input
