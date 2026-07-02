@@ -32,9 +32,11 @@ function getStripePromise() {
 type StackState = { isOpen: boolean; entryCardId: string | null }
 type PendingPayment = {
   cardId: string
-  clientSecret: string
+  clientSecret?: string
   creatorName: string
   amountCents: number
+  demo: boolean
+  demoOnly?: boolean
 } | null
 
 // The confirmation is a moment, not a toast: one or two quiet lines, and —
@@ -80,6 +82,24 @@ function formatAmount(cents: number): string {
   return cents % 100 === 0 ? `$${cents / 100}` : `$${(cents / 100).toFixed(2)}`
 }
 
+function demoPaymentEnabled() {
+  return import.meta.env.VITE_PAYMENT_DEMO_MODE !== 'false'
+}
+
+function useResponsiveRailTile() {
+  const [tile, setTile] = useState(() => (window.matchMedia('(max-width: 767px)').matches ? 82 : 92))
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 767px)')
+    const update = () => setTile(media.matches ? 82 : 92)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+
+  return tile
+}
+
 function asContribution(card: PublicCard, frameId: string, creatorId: string): Contribution {
   return {
     id: card.id,
@@ -117,6 +137,7 @@ export function FramePage() {
   const [composerOpen, setComposerOpen] = useState(false)
   const [stackState, setStackState] = useState<StackState>({ isOpen: false, entryCardId: null })
   const [pendingPayment, setPendingPayment] = useState<PendingPayment>(null)
+  const railTile = useResponsiveRailTile()
   const composerRef = useRef<HTMLDivElement | null>(null)
   const stackReturnRef = useRef<HTMLElement | null>(null)
   const greetedPendingRef = useRef(false)
@@ -252,8 +273,8 @@ export function FramePage() {
       })
     } else {
       setConfirmation({
-        primary: `Your card is with ${creatorFirst}.`,
-        secondary: `The ${formatAmount(amountCents)} didn't go with it yet.`,
+        primary: `The ${formatAmount(amountCents)} is still waiting.`,
+        secondary: `Your card is saved; complete the amount when you're ready.`,
         action: { label: 'Complete it', cardId },
       })
     }
@@ -261,17 +282,24 @@ export function FramePage() {
 
   const startPayment = async (cardId: string, amountCents: number) => {
     if (!frame) return
-    const intent = await createCardPaymentIntent(cardId)
-    if (intent.clientSecret.startsWith('sim_secret')) {
-      const paid = await pollPayment(cardId)
-      confirmPlaced(amountCents, paid, cardId)
-      await queryClient.invalidateQueries({ queryKey: ['frame', slug] })
-    } else {
+    try {
+      const intent = await createCardPaymentIntent(cardId)
+      const simulatedIntent = intent.clientSecret.startsWith('sim_secret')
       setPendingPayment({
         cardId,
         clientSecret: intent.clientSecret,
         creatorName: frame.creator.name,
         amountCents,
+        demo: demoPaymentEnabled() || simulatedIntent,
+      })
+    } catch (e) {
+      if (!demoPaymentEnabled()) throw e
+      setPendingPayment({
+        cardId,
+        creatorName: frame.creator.name,
+        amountCents,
+        demo: true,
+        demoOnly: true,
       })
     }
   }
@@ -345,8 +373,8 @@ export function FramePage() {
 
   const closePayment = async () => {
     if (!pendingPayment) return
-    const { cardId, amountCents } = pendingPayment
-    const paid = await pollPayment(cardId)
+    const { cardId, amountCents, demoOnly } = pendingPayment
+    const paid = demoOnly ? true : await pollPayment(cardId)
     setPendingPayment(null)
     confirmPlaced(amountCents, paid, cardId)
     await queryClient.invalidateQueries({ queryKey: ['frame', slug] })
@@ -420,8 +448,8 @@ export function FramePage() {
         }}
       />
 
-      <div className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col items-center px-7 pb-4 md:px-12">
-        <header className="text-center pt-10 pb-4 md:pt-6 md:pb-4">
+      <div className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col items-center px-5 pb-4 md:px-12">
+        <header className="text-center pt-6 pb-3 md:pt-6 md:pb-4">
           <p className="text-[11px] uppercase tracking-[0.16em] text-parchment/58">
             {frame.creator.name}
           </p>
@@ -438,7 +466,7 @@ export function FramePage() {
           <div className={`relative z-10 ${cards.length > 0 ? '-mt-7 md:-mt-8' : 'mt-4'}`}>
             <ContributionCardRail
               cards={cards}
-              tile={92}
+              tile={railTile}
               viewerRole={viewerRole}
               isOwn={isOwn}
               creatorFirst={creatorFirst}
@@ -559,18 +587,19 @@ export function FramePage() {
               }}
             >
               <div className="mb-5 flex items-start justify-between gap-4">
-                <p className="font-display text-xl text-[#211c16]/90">Complete the amount</p>
+                <p className="font-display text-xl text-[#211c16]/90">Let the amount go with it</p>
                 <button
                   type="button"
                   onClick={dismissPayment}
                   className="shrink-0 rounded-[6px] border border-[#211c16]/25 px-3 py-1.5 text-sm text-[#211c16]/72 transition-colors hover:border-[#211c16]/50 hover:text-[#211c16]"
                 >
-                  Not now
+                  Later
                 </button>
               </div>
               <PaymentStep
-                stripePromise={getStripePromise()}
+                stripePromise={pendingPayment.demo ? undefined : getStripePromise()}
                 clientSecret={pendingPayment.clientSecret}
+                demo={pendingPayment.demo}
                 artistName={pendingPayment.creatorName}
                 amountCents={pendingPayment.amountCents}
                 onSucceeded={() => void closePayment()}

@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getPublicArchive } from '../services/api'
 
@@ -24,14 +24,16 @@ export function ArchivePage() {
     )
   }
 
+  const frames = archive.frames ?? []
+
   return (
-    <div className="min-h-full max-w-xl mx-auto px-6 py-16 flex flex-col gap-12">
+    <div className="min-h-full max-w-3xl mx-auto px-6 py-12 md:py-16 flex flex-col gap-10">
       <header className="space-y-6">
         {archive.heroImageUrl && (
           <img
             src={archive.heroImageUrl}
             alt={archive.name}
-            className="w-full aspect-[3/2] object-cover ring-1 ring-line"
+            className="w-full aspect-[3/2] object-cover rounded-[8px] ring-1 ring-line"
           />
         )}
         <h1 className="font-display text-5xl leading-tight">{archive.name}</h1>
@@ -62,15 +64,35 @@ export function ArchivePage() {
         </ul>
       )}
 
-      <div className="mt-auto space-y-3">
-        {archive.stripeOnboarded ? (
-          <p className="text-center text-sm text-muted">
-            Cards live with each frame the creator shares.
-          </p>
-        ) : (
-          <p className="text-center text-sm text-muted">No active frame shared here yet.</p>
-        )}
-      </div>
+      {frames.length > 0 ? (
+        <section className="space-y-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.16em] text-muted">Living Frames</p>
+            <h2 className="mt-1 font-display text-3xl">Works holding cards</h2>
+          </div>
+          <ul className="grid gap-4 sm:grid-cols-2">
+            {frames.map((frame) => (
+              <li key={frame.id}>
+                <Link
+                  to={`/m/${frame.slug}`}
+                  className="group block overflow-hidden rounded-[8px] border border-line bg-surface transition-colors hover:border-parchment/30"
+                >
+                  <img src={frame.imageUrl} alt="" className="aspect-[4/3] w-full object-cover" />
+                  <div className="p-4">
+                    <p className="font-display text-2xl leading-tight text-parchment/95">{frame.title}</p>
+                    {frame.context && <p className="mt-1 text-sm text-muted">{frame.context}</p>}
+                    <p className="mt-3 text-xs uppercase tracking-[0.14em] text-muted">
+                      {frame.cardCount} {frame.cardCount === 1 ? 'card' : 'cards'} gathered
+                    </p>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : (
+        <p className="text-center text-sm text-muted">No active frame shared here yet.</p>
+      )}
     </div>
   )
 }

@@ -21,6 +21,7 @@ export interface PublicArchive {
   mediaLinks: { kind: 'spotify' | 'bandcamp' | 'youtube' | 'link'; url: string }[] | null
   stripeOnboarded: boolean
   stewardCount: number
+  frames?: ArchiveFrame[]
 }
 
 export interface PublicCard {
@@ -58,6 +59,20 @@ export interface CreatorFrame extends Omit<PublicFrame, 'cards'> {
 }
 
 export interface MyFrame {
+  id: string
+  title: string
+  context: string | null
+  imageUrl: string
+  slug: string
+  cardCount: number
+  visibleCardCount?: number
+  amountReceivedCents?: number
+  amountPendingCents?: number
+  heldPhotoCount?: number
+  createdAt: string
+}
+
+export interface ArchiveFrame {
   id: string
   title: string
   context: string | null

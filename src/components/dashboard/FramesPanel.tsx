@@ -11,16 +11,33 @@ import {
   listMyFrames,
   uploadImage,
 } from '../../services/api'
-import type { CreatorCard } from '../../types/api.types'
+import type { CreatorCard, MyFrame } from '../../types/api.types'
 
 function formatAmount(card: CreatorCard) {
-  if (!card.amountCents) return 'No amount'
+  if (!card.amountCents) return 'Card only'
   const amount = new Intl.NumberFormat(undefined, {
     style: 'currency',
     currency: card.currency.toUpperCase(),
     maximumFractionDigits: 0,
   }).format(card.amountCents / 100)
-  return card.paymentStatus === 'succeeded' ? amount : `${amount} · ${card.paymentStatus}`
+  return card.paymentStatus === 'succeeded' ? amount : `${amount} waiting`
+}
+
+function formatMoney(cents = 0) {
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(cents / 100)
+}
+
+function frameSignal(frame: MyFrame) {
+  const held = frame.heldPhotoCount ?? 0
+  const waiting = frame.amountPendingCents ?? 0
+  if (held > 0) return `${held} photo${held === 1 ? '' : 's'} to review`
+  if (waiting > 0) return `${formatMoney(waiting)} still waiting`
+  if ((frame.amountReceivedCents ?? 0) > 0) return `${formatMoney(frame.amountReceivedCents)} received`
+  return `${frame.cardCount} ${frame.cardCount === 1 ? 'card' : 'cards'} gathered`
 }
 
 function photoStatusLabel(card: CreatorCard) {
@@ -67,7 +84,9 @@ function ReviewCard({
           </div>
           <div className="shrink-0 text-right">
             <p className="font-display text-lg leading-tight text-[#211c16]/78">{formatAmount(card)}</p>
-            <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-[#2a251e]/40">{card.visibility}</p>
+            <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-[#2a251e]/40">
+              {card.hiddenByCreator ? 'hidden' : card.visibility}
+            </p>
           </div>
         </div>
 
@@ -246,10 +265,10 @@ export function FramesPanel() {
     <section className="space-y-6">
       <div className="flex items-start justify-between gap-5 border-b border-line pb-5">
         <div>
-          <p className="text-xs uppercase tracking-[0.16em] text-muted">Living Frames</p>
-          <h2 className="mt-1 font-display text-3xl">Works gathering cards</h2>
+          <p className="text-xs uppercase tracking-[0.16em] text-muted">Share center</p>
+          <h2 className="mt-1 font-display text-3xl">Living Frames ready to send</h2>
           <p className="mt-1 max-w-md text-sm leading-relaxed text-muted">
-            Create one public object for a work, then share the room where cards gather at its edge.
+            Create the work object, copy the link, pull the QR, and review the cards gathering at its edge.
           </p>
         </div>
         {!creating && (
@@ -268,7 +287,7 @@ export function FramesPanel() {
           <div className="mb-5">
             <p className="font-display text-xl">Prepare a frame</p>
             <p className="mt-1 text-sm leading-relaxed text-muted">
-              Choose the image first. The public page will keep the work dominant and let cards gather below it.
+              Choose the image first. The public link will keep the work dominant and hold one waiting card below it.
             </p>
           </div>
           <div className="grid gap-5 md:grid-cols-[12rem_1fr]">
@@ -341,15 +360,21 @@ export function FramesPanel() {
       {isLoading && <p className="rounded-[8px] border border-line bg-surface p-5 text-sm text-muted">Loading frames...</p>}
 
       {!isLoading && (frames ?? []).length === 0 && !creating && (
-        <div className="rounded-[8px] border border-dashed border-line bg-surface/60 p-6">
-          <p className="font-display text-xl">No frames yet.</p>
-          <p className="mt-2 text-sm leading-relaxed text-muted">
-            Start with one image and a little context. The public link becomes the place where cards gather.
-          </p>
+        <div className="grid gap-5 rounded-[8px] border border-dashed border-line bg-surface/60 p-6 md:grid-cols-[1fr_14rem] md:items-center">
+          <div>
+            <p className="font-display text-2xl">Create the first shareable frame.</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              Start with one strong image and a little context. You will get a public link and QR for the place where cards gather.
+            </p>
+          </div>
+          <div className="rounded-[8px] border border-line bg-ink/70 p-3">
+            <div className="aspect-[4/5] rounded-[6px] border border-line bg-surface/45" />
+            <div className="mx-auto mt-3 h-10 w-16 rounded-[5px] bg-parchment/70" />
+          </div>
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="mt-5 rounded-[7px] border border-line bg-ink px-4 py-2 text-sm text-parchment hover:border-parchment/30"
+            className="rounded-[7px] border border-line bg-ink px-4 py-2 text-sm text-parchment hover:border-parchment/30 md:col-span-2 md:w-fit"
           >
             Create first frame
           </button>
@@ -367,48 +392,75 @@ export function FramesPanel() {
               : 0
           return (
             <li key={frame.id} className="overflow-hidden rounded-[8px] border border-line bg-surface">
-              <div className="grid gap-4 p-4 sm:grid-cols-[5.5rem_1fr_auto] sm:items-center">
+              <div className="grid gap-4 p-4 lg:grid-cols-[9.5rem_1fr_auto] lg:items-start">
                 <Link
                   to={`/m/${frame.slug}`}
-                  className="block h-24 w-full overflow-hidden rounded-[7px] border border-line bg-ink sm:h-28"
+                  className="block h-44 w-full overflow-hidden rounded-[7px] border border-line bg-ink lg:h-48"
                   aria-label={`Open ${frame.title}`}
                 >
                   <img src={frame.imageUrl} alt="" className="h-full w-full object-cover" />
                 </Link>
                 <div className="min-w-0">
-                  <p className="font-display text-2xl leading-tight">{frame.title}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-brass/30 bg-brass/10 px-2.5 py-1 text-[11px] text-parchment">
+                      Live
+                    </span>
+                    {(frame.heldPhotoCount ?? 0) > 0 && (
+                      <span className="rounded-full border border-line px-2.5 py-1 text-[11px] text-muted">
+                        {frame.heldPhotoCount} photo{frame.heldPhotoCount === 1 ? '' : 's'} to review
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-3 font-display text-3xl leading-tight">{frame.title}</p>
                   <p className="mt-1 text-sm text-muted">{frame.context ?? 'Living Frame'}</p>
-                  <p className="mt-3 text-xs uppercase tracking-[0.14em] text-muted">
-                    {frame.cardCount} {frame.cardCount === 1 ? 'card' : 'cards'} gathered
+                  <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                    <div className="rounded-[7px] border border-line bg-ink/35 px-3 py-2">
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-muted">Cards</p>
+                      <p className="mt-1 font-display text-xl">{frame.visibleCardCount ?? frame.cardCount}</p>
+                    </div>
+                    <div className="rounded-[7px] border border-line bg-ink/35 px-3 py-2">
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-muted">Received</p>
+                      <p className="mt-1 font-display text-xl">{formatMoney(frame.amountReceivedCents)}</p>
+                    </div>
+                    <div className="rounded-[7px] border border-line bg-ink/35 px-3 py-2">
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-muted">Waiting</p>
+                      <p className="mt-1 font-display text-xl">{formatMoney(frame.amountPendingCents)}</p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-xs leading-relaxed text-muted">
+                    {frameSignal(frame)}
+                  </p>
+                  <p className="mt-3 break-all rounded-[6px] border border-line bg-ink/30 px-3 py-2 text-xs text-muted">
+                    {publicFrameUrl(frame.slug)}
                   </p>
                 </div>
-                <div className="flex shrink-0 flex-wrap gap-2 text-sm sm:flex-col sm:items-end">
-                  <button
-                    type="button"
-                    onClick={() => setOpenSlug(expanded ? null : frame.slug)}
-                    className="rounded-[6px] border border-line px-3 py-2 text-parchment hover:border-parchment/30"
-                  >
-                    {expanded ? 'Close review' : 'Review cards'}
-                  </button>
-                  <Link
-                    to={`/m/${frame.slug}`}
-                    className="rounded-[6px] border border-line px-3 py-2 text-muted hover:text-parchment"
-                  >
-                    Open
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => setQrSlug(qrSlug === frame.slug ? null : frame.slug)}
-                    className="rounded-[6px] border border-line px-3 py-2 text-muted hover:text-parchment"
-                  >
-                    QR
-                  </button>
+                <div className="grid shrink-0 grid-cols-2 gap-2 text-sm sm:flex sm:flex-wrap lg:flex-col lg:items-stretch">
                   <button
                     type="button"
                     onClick={() => copyLink(frame.slug)}
-                    className="rounded-[6px] border border-line px-3 py-2 text-muted hover:text-parchment"
+                    className="rounded-[6px] border border-parchment/28 bg-ink px-3 py-2 text-parchment hover:border-parchment/45"
                   >
                     {copiedSlug === frame.slug ? 'Copied' : 'Copy link'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQrSlug(qrSlug === frame.slug ? null : frame.slug)}
+                    className="rounded-[6px] border border-line px-3 py-2 text-parchment hover:border-parchment/30"
+                  >
+                    {qrSlug === frame.slug ? 'Hide QR' : 'Show QR'}
+                  </button>
+                  <Link
+                    to={`/m/${frame.slug}`}
+                    className="rounded-[6px] border border-line px-3 py-2 text-center text-muted hover:text-parchment"
+                  >
+                    Preview
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setOpenSlug(expanded ? null : frame.slug)}
+                    className="rounded-[6px] border border-line px-3 py-2 text-muted hover:text-parchment"
+                  >
+                    {expanded ? 'Close cards' : 'Review cards'}
                   </button>
                 </div>
               </div>
@@ -425,7 +477,7 @@ export function FramesPanel() {
                     </div>
                     <div className="space-y-3">
                       <div>
-                        <p className="font-display text-lg">Room-ready QR</p>
+                        <p className="font-display text-lg">QR for the frame</p>
                         <p className="mt-1 break-all text-xs leading-relaxed text-muted">
                           {publicFrameUrl(frame.slug)}
                         </p>

@@ -19,6 +19,53 @@ interface InnerProps {
   onSucceeded: () => void
 }
 
+function DemoWalletPayment({ artistName, amountCents, onSucceeded }: InnerProps) {
+  const [confirming, setConfirming] = useState(false)
+  const amount = formatAmount(amountCents)
+
+  const complete = () => {
+    if (confirming) return
+    setConfirming(true)
+    window.setTimeout(onSucceeded, 640)
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-[9px] border border-[#211c16]/10 bg-[#fff8e8]/42 px-4 py-3">
+        <p className="font-display text-[16px] leading-snug text-[#211c16]/88">
+          {amount} goes with your card to {artistName}.
+        </p>
+        <p className="mt-1 text-[11px] leading-snug text-[#211c16]/55">
+          Pilot mode: this shows the intended wallet moment without moving live money.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        disabled={confirming}
+        onClick={complete}
+        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[9px] border border-[#0f0f0f] bg-[#111] px-4 py-3 font-sans text-[15px] font-semibold text-white shadow-[0_10px_18px_rgba(0,0,0,0.22)] disabled:opacity-55"
+        aria-label={`Let ${amount} go with your card`}
+      >
+        <span>{confirming ? 'Carrying it...' : 'Apple Pay'}</span>
+      </button>
+
+      <button
+        type="button"
+        disabled={confirming}
+        onClick={complete}
+        className="w-full rounded-[8px] border border-[#211c16]/16 bg-[#211c16]/[0.035] py-2.5 font-display text-[14px] text-[#211c16]/76 transition-colors hover:bg-[#211c16]/[0.06] disabled:opacity-50"
+      >
+        Use another card
+      </button>
+
+      <p className="text-center text-[11px] leading-snug text-[#211c16]/58">
+        The amount stays inside your card. {artistName} sees your name with it.
+      </p>
+    </div>
+  )
+}
+
 function PaymentForm({ artistName, amountCents, onSucceeded }: InnerProps) {
   const stripe = useStripe()
   const elements = useElements()
@@ -60,7 +107,7 @@ function PaymentForm({ artistName, amountCents, onSucceeded }: InnerProps) {
             : 'border-[#211c16]/10 bg-[#211c16]/5 text-[#211c16]/45'
         }`}
       >
-        {confirming ? 'One moment' : 'Complete the amount'}
+        {confirming ? 'One moment' : 'Let it go with the card'}
       </button>
       <p className="text-center text-[11px] leading-snug text-[#211c16]/68">
         Payments handled by Stripe. {artistName} receives this directly.
@@ -70,11 +117,29 @@ function PaymentForm({ artistName, amountCents, onSucceeded }: InnerProps) {
 }
 
 interface Props extends InnerProps {
-  stripePromise: Promise<Stripe | null>
-  clientSecret: string
+  stripePromise?: Promise<Stripe | null>
+  clientSecret?: string
+  demo?: boolean
 }
 
-export function PaymentStep({ stripePromise, clientSecret, artistName, amountCents, onSucceeded }: Props) {
+export function PaymentStep({
+  stripePromise,
+  clientSecret,
+  artistName,
+  amountCents,
+  onSucceeded,
+  demo = false,
+}: Props) {
+  if (demo || !stripePromise || !clientSecret) {
+    return (
+      <DemoWalletPayment
+        artistName={artistName}
+        amountCents={amountCents}
+        onSucceeded={onSucceeded}
+      />
+    )
+  }
+
   return (
     <Elements
       stripe={stripePromise}

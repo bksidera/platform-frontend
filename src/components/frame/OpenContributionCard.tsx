@@ -159,7 +159,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
   const [custom, setCustom] = useState('')
   const [justCard, setJustCard] = useState(false)
   const [isPrivate, setIsPrivate] = useState(false)
-  const [amountOpen, setAmountOpen] = useState(true)
+  const [amountOpen, setAmountOpen] = useState(false)
 
   const amountSelected = !justCard && !!amountCents && amountCents >= 100
   const hasDisplayName = name.trim().length > 0
@@ -171,12 +171,18 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
   const needsCardContentChoice = hasStartedCard && hasEmail && !hasCompletionChoice
   const selectedAmountText = amountSelected && amountCents ? `${formatAmount(amountCents)} will go with it.` : null
   const helperText = !hasStartedCard
-    ? 'Add your name, a few words, and a photo or amount to send your card.'
+    ? 'Write your name and a few words. Then choose what goes with the card.'
     : !hasEmail
       ? 'Add your email to place the card.'
       : null
   const primaryButtonActive = (canPlace || needsCardContentChoice) && !busy
-  const placeLabel = busy ? 'Placing card...' : needsCardContentChoice ? 'Choose what goes inside' : 'Place card'
+  const placeLabel = busy
+    ? 'Placing card...'
+    : needsCardContentChoice
+      ? 'Choose what goes with it'
+      : amountSelected
+        ? 'Continue'
+        : 'Place card'
   const {
     keyboardBottomSpace,
     scrollFocusedFieldIntoView,
@@ -372,7 +378,9 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
 
       <div className="border-b border-[#211c16]/10 pb-3" data-composer-section>
         <div className="mb-2">
-          <span className="text-[10px] uppercase tracking-[0.12em] text-[#211c16]/42">Inside the card</span>
+          <span className="text-[10px] uppercase tracking-[0.12em] text-[#211c16]/42">
+            Goes with the card
+          </span>
         </div>
 
         <motion.button
@@ -397,14 +405,14 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
               ? `${formatAmount(amountCents)}${amountCents === 1000 ? ' usual' : ''}`
               : justCard
                 ? 'Just the Card'
-                : 'Select amount'}
+                : 'Choose an amount'}
           </span>
           <span className={amountSelected ? 'text-[#f3ecde]/42' : 'text-[#211c16]/34'}>⌄</span>
         </motion.button>
 
         {needsCardContentChoice && (
           <p className="mt-2 text-center text-[10px] leading-snug text-[#211c16]/58">
-            Select an amount, or choose Just the Card.
+            Add an amount, or leave just the card.
           </p>
         )}
 

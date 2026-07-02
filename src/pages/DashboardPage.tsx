@@ -107,9 +107,9 @@ function Onboarding() {
         <p className="p-5 text-sm text-muted">Checking amount setup...</p>
       ) : status?.simulated ? (
         <div className="m-5 rounded-[7px] border border-brass/30 bg-brass/10 p-4">
-          <p className="font-display text-lg text-parchment">Demo amount mode</p>
+          <p className="font-display text-lg text-parchment">Pilot amount mode</p>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            Amounts can be tested here, but no real money moves. Connect Stripe before a live room.
+            Amounts can be felt in the product now. Live payouts can be connected after creator feedback.
           </p>
         </div>
       ) : status?.onboarded ? (
@@ -121,7 +121,7 @@ function Onboarding() {
       ) : (
         <div className="space-y-4 p-5">
           <p className="text-muted text-sm leading-relaxed">
-            Amounts arrive through Stripe. Set up your account once; cards stay attached to your work.
+            Connect payouts when you are ready to move live amounts. Cards stay attached to your work either way.
           </p>
           <button
             type="button"
