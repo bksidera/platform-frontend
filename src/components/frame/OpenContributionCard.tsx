@@ -350,7 +350,7 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
         <p className="text-[10px] leading-snug text-[#211c16]/42">optional memory</p>
       </div>
 
-      <div className="rounded-[8px] border border-[#211c16]/8 bg-[#fff8e8]/20 px-2.5 py-2.5" data-composer-section>
+      <div className="border-y border-[#211c16]/10 py-3" data-composer-section>
         <div className="mb-2 flex items-baseline justify-between gap-3">
           <span className="text-[10px] uppercase tracking-[0.12em] text-[#211c16]/42">Inside the card</span>
           <span className="shrink-0 text-[10px] text-[#211c16]/38">optional</span>
@@ -389,78 +389,82 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-              className="mt-2 grid grid-cols-2 gap-1.5"
+              className="mt-2 space-y-1.5"
             >
-              {PRESETS.map((cents) => (
+              <div className="grid grid-cols-3 gap-1.5">
+                {PRESETS.map((cents) => (
+                  <button
+                    key={cents}
+                    type="button"
+                    onPointerDown={blurActiveTextField}
+                    onClick={() => selectAmount(cents)}
+                    aria-pressed={amountCents === cents && !customOpen && !justCard}
+                    className={`min-h-8 rounded-[5px] border border-transparent px-2 py-1 text-[13px] transition-colors ${
+                      amountCents === cents && !customOpen && !justCard ? CHIP_SELECTED : CHIP_IDLE
+                    }`}
+                  >
+                    {cents === 1000 ? (
+                      <span className="inline-flex items-baseline justify-center gap-1">
+                        <span>$10</span>
+                        <span
+                          className={
+                            amountCents === cents && !customOpen && !justCard
+                              ? 'text-[9px] text-[#f3ecde]/62'
+                              : 'text-[9px] text-[#211c16]/42'
+                          }
+                        >
+                          usual
+                        </span>
+                      </span>
+                    ) : (
+                      `$${cents / 100}`
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {customOpen && !justCard ? (
+                  <label className={`flex min-h-8 items-center justify-center gap-1 rounded-[5px] px-2 py-1 text-[13px] ${CHIP_SELECTED}`}>
+                    <span className="text-[#f3ecde]/62">$</span>
+                    <input
+                      ref={customInputRef}
+                      inputMode="decimal"
+                      aria-label="Custom amount"
+                      placeholder="Other"
+                      value={custom}
+                      onFocus={scrollFocusedFieldIntoView}
+                      onBlur={clearFallbackKeyboardSpace}
+                      onChange={(e) => {
+                        setCustom(e.target.value)
+                        const d = parseFloat(e.target.value)
+                        setAmountCents(d >= 1 ? Math.round(d * 100) : null)
+                      }}
+                      className="min-w-0 flex-1 bg-transparent text-center text-inherit placeholder:text-[#f3ecde]/55 focus:outline-none"
+                    />
+                  </label>
+                ) : (
+                  <button
+                    type="button"
+                    onPointerDown={blurActiveTextField}
+                    onClick={openCustom}
+                    aria-pressed={false}
+                    className={`min-h-8 rounded-[5px] border border-transparent px-2 py-1 text-[13px] transition-colors ${CHIP_IDLE}`}
+                  >
+                    Other
+                  </button>
+                )}
                 <button
-                  key={cents}
                   type="button"
                   onPointerDown={blurActiveTextField}
-                  onClick={() => selectAmount(cents)}
-                  aria-pressed={amountCents === cents && !customOpen && !justCard}
+                  onClick={selectJustCard}
+                  aria-pressed={justCard}
                   className={`min-h-8 rounded-[5px] border border-transparent px-2 py-1 text-[13px] transition-colors ${
-                    amountCents === cents && !customOpen && !justCard ? CHIP_SELECTED : CHIP_IDLE
+                    justCard ? CHIP_SELECTED : CHIP_IDLE
                   }`}
                 >
-                  {cents === 1000 ? (
-                    <span className="inline-flex items-baseline justify-center gap-1">
-                      <span>$10</span>
-                      <span
-                        className={
-                          amountCents === cents && !customOpen && !justCard
-                            ? 'text-[9px] text-[#f3ecde]/62'
-                            : 'text-[9px] text-[#211c16]/42'
-                        }
-                      >
-                        usual
-                      </span>
-                    </span>
-                  ) : (
-                    `$${cents / 100}`
-                  )}
+                  Just the Card
                 </button>
-              ))}
-              {customOpen && !justCard ? (
-                <label className={`flex min-h-8 items-center justify-center gap-1 rounded-[5px] px-2 py-1 text-[13px] ${CHIP_SELECTED}`}>
-                  <span className="text-[#f3ecde]/62">$</span>
-                  <input
-                    ref={customInputRef}
-                    inputMode="decimal"
-                    aria-label="Custom amount"
-                    placeholder="Other"
-                    value={custom}
-                    onFocus={scrollFocusedFieldIntoView}
-                    onBlur={clearFallbackKeyboardSpace}
-                    onChange={(e) => {
-                      setCustom(e.target.value)
-                      const d = parseFloat(e.target.value)
-                      setAmountCents(d >= 1 ? Math.round(d * 100) : null)
-                    }}
-                    className="min-w-0 flex-1 bg-transparent text-center text-inherit placeholder:text-[#f3ecde]/55 focus:outline-none"
-                  />
-                </label>
-              ) : (
-                <button
-                  type="button"
-                  onPointerDown={blurActiveTextField}
-                  onClick={openCustom}
-                  aria-pressed={false}
-                  className={`min-h-8 rounded-[5px] border border-transparent px-2 py-1 text-[13px] transition-colors ${CHIP_IDLE}`}
-                >
-                  Other
-                </button>
-              )}
-              <button
-                type="button"
-                onPointerDown={blurActiveTextField}
-                onClick={selectJustCard}
-                aria-pressed={justCard}
-                className={`min-h-8 rounded-[5px] border border-transparent px-2 py-1 text-[13px] transition-colors ${
-                  justCard ? CHIP_SELECTED : CHIP_IDLE
-                }`}
-              >
-                Just the Card
-              </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
