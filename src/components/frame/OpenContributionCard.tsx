@@ -362,7 +362,7 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
           onPointerDown={blurActiveTextField}
           onClick={() => setAmountOpen((open) => !open)}
           aria-expanded={amountOpen}
-          className={`mx-auto inline-flex min-h-8 w-[min(100%,13.5rem)] items-center justify-between rounded-full border px-3 py-1.5 text-[12px] transition-colors ${
+          className={`mx-auto flex min-h-8 w-fit items-center justify-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition-colors ${
             amountSelected
               ? 'border-[#211c16] bg-[#211c16] text-[#f3ecde] shadow-[0_5px_12px_rgba(33,28,22,0.16)]'
               : justCard
