@@ -97,7 +97,7 @@ export function ReadableContributionCard({
                   : 'border-parchment/40 text-parchment hover:border-parchment/70'
               }`}
             >
-              Complete it
+              Let it go
             </button>
           )}
         </div>

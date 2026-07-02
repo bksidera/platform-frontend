@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from 'framer-motion'
  */
 
 const PRESETS = [500, 1000, 2500]
+const USUAL_AMOUNT_CENTS = 1000
 const NAME_LIMIT = 24
 const NOTE_LIMIT = 140
 const FALLBACK_DISPLAY_NAME = 'Visitor'
@@ -154,7 +155,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
   const [note, setNote] = useState('')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
-  const [amountCents, setAmountCents] = useState<number | null>(null)
+  const [amountCents, setAmountCents] = useState<number | null>(USUAL_AMOUNT_CENTS)
   const [customOpen, setCustomOpen] = useState(false)
   const [custom, setCustom] = useState('')
   const [justCard, setJustCard] = useState(false)
@@ -166,23 +167,19 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
   const hasEmail = email.trim().includes('@')
   const hasNote = note.trim().length > 0
   const hasStartedCard = hasNote || hasDisplayName
-  const hasCompletionChoice = amountSelected || justCard
-  const canPlace = hasStartedCard && hasEmail && hasCompletionChoice
-  const needsCardContentChoice = hasStartedCard && hasEmail && !hasCompletionChoice
-  const selectedAmountText = amountSelected && amountCents ? `${formatAmount(amountCents)} will go with it.` : null
-  const helperText = !hasStartedCard
-    ? 'Write your name and a few words. Then choose what goes with the card.'
-    : !hasEmail
-      ? 'Add your email to place the card.'
-      : null
-  const primaryButtonActive = (canPlace || needsCardContentChoice) && !busy
+  const canPlace = hasDisplayName && hasNote && hasEmail
+  const selectedAmountText = amountSelected && amountCents ? `${formatAmount(amountCents)} goes with this card.` : null
+  const helperText = !hasDisplayName
+    ? `${formatAmount(USUAL_AMOUNT_CENTS)} is tucked inside. Add your name to begin.`
+    : !hasNote
+      ? 'Add a few words for the creator.'
+      : !hasEmail
+        ? 'Add your email to send the card.'
+        : null
+  const primaryButtonActive = canPlace && !busy
   const placeLabel = busy
-    ? 'Placing card...'
-    : needsCardContentChoice
-      ? 'Choose what goes with it'
-      : amountSelected
-        ? 'Continue'
-        : 'Place card'
+    ? 'Sending card...'
+    : 'Send card'
   const {
     keyboardBottomSpace,
     scrollFocusedFieldIntoView,
@@ -217,22 +214,8 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
     })
   }
 
-  const guideCardContentChoice = () => {
-    blurActiveTextField()
-    setAmountOpen(true)
-    window.requestAnimationFrame(() => {
-      amountButtonRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      amountButtonRef.current?.focus({ preventScroll: true })
-    })
-  }
-
   const handlePrimaryAction = () => {
-    if (canPlace) {
-      place()
-      return
-    }
-
-    if (needsCardContentChoice) guideCardContentChoice()
+    if (canPlace) place()
   }
 
   const selectAmount = (cents: number) => {
@@ -379,7 +362,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
       <div className="border-b border-[#211c16]/10 pb-3" data-composer-section>
         <div className="mb-2">
           <span className="text-[10px] uppercase tracking-[0.12em] text-[#211c16]/42">
-            Goes with the card
+            Inside the card
           </span>
         </div>
 
@@ -395,26 +378,22 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
               ? 'border-[#211c16] bg-[#211c16] text-[#f3ecde] shadow-[0_5px_12px_rgba(33,28,22,0.16)]'
               : justCard
                 ? 'border-[#211c16]/12 bg-[#211c16]/[0.05] text-[#211c16]/68'
-                : needsCardContentChoice
-                  ? 'border-[#211c16]/30 bg-[#211c16]/[0.075] text-[#211c16]/82 shadow-[0_5px_14px_rgba(33,28,22,0.10)] hover:bg-[#211c16]/[0.1]'
-                  : 'border-[#211c16]/10 bg-[#211c16]/[0.035] text-[#211c16]/58 hover:bg-[#211c16]/[0.065]'
+                : 'border-[#211c16]/10 bg-[#211c16]/[0.035] text-[#211c16]/58 hover:bg-[#211c16]/[0.065]'
           }`}
         >
           <span>
             {amountSelected && amountCents
-              ? `${formatAmount(amountCents)}${amountCents === 1000 ? ' usual' : ''}`
+              ? `${formatAmount(amountCents)} goes with this card`
               : justCard
-                ? 'Just the Card'
-                : 'Choose an amount'}
+                ? 'Words only'
+                : 'Add an amount'}
           </span>
           <span className={amountSelected ? 'text-[#f3ecde]/42' : 'text-[#211c16]/34'}>⌄</span>
         </motion.button>
 
-        {needsCardContentChoice && (
-          <p className="mt-2 text-center text-[10px] leading-snug text-[#211c16]/58">
-            Add an amount, or leave just the card.
-          </p>
-        )}
+        <p className="mt-2 text-center text-[10px] leading-snug text-[#211c16]/54">
+          Amounts are private in public. The creator sees what went with your card.
+        </p>
 
         <AnimatePresence initial={false}>
           {amountOpen && (
@@ -495,10 +474,12 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
                   onClick={selectJustCard}
                   aria-pressed={justCard}
                   className={`min-h-8 rounded-[5px] border border-transparent px-2 py-1 text-[13px] transition-colors ${
-                    justCard ? CHIP_SELECTED : CHIP_IDLE
+                    justCard
+                      ? 'bg-[#211c16]/[0.075] text-[#211c16]/82 shadow-[0_5px_12px_rgba(33,28,22,0.08)]'
+                      : 'bg-transparent text-[#211c16]/50 hover:bg-[#211c16]/[0.045] hover:text-[#211c16]/72'
                   }`}
                 >
-                  Just the Card
+                  Words only
                 </button>
               </div>
             </motion.div>
@@ -524,7 +505,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
         </p>
       )}
 
-      {selectedAmountText && (
+      {selectedAmountText && hasStartedCard && (
         <p className="mt-3.5 text-center text-[10px] leading-snug text-[#211c16]/58">
           {selectedAmountText}
         </p>

@@ -36,7 +36,7 @@ function DemoWalletPayment({ artistName, amountCents, onSucceeded }: InnerProps)
           {amount} goes with your card to {artistName}.
         </p>
         <p className="mt-1 text-[11px] leading-snug text-[#211c16]/55">
-          Pilot mode: this shows the intended wallet moment without moving live money.
+          The card is ready. This sends the amount with it.
         </p>
       </div>
 
@@ -60,7 +60,7 @@ function DemoWalletPayment({ artistName, amountCents, onSucceeded }: InnerProps)
       </button>
 
       <p className="text-center text-[11px] leading-snug text-[#211c16]/58">
-        The amount stays inside your card. {artistName} sees your name with it.
+        The amount is private in public. {artistName} sees it with your card.
       </p>
     </div>
   )
@@ -110,7 +110,7 @@ function PaymentForm({ artistName, amountCents, onSucceeded }: InnerProps) {
         {confirming ? 'One moment' : 'Let it go with the card'}
       </button>
       <p className="text-center text-[11px] leading-snug text-[#211c16]/68">
-        Payments handled by Stripe. {artistName} receives this directly.
+        The amount is private in public. {artistName} sees it with your card.
       </p>
     </div>
   )

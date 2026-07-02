@@ -228,7 +228,7 @@ export function FramePage() {
     if (!meta?.amountCents) return
     setConfirmation({
       primary: `Your ${formatAmount(meta.amountCents)} hasn't gone with your card yet.`,
-      action: { label: 'Complete it', cardId: meta.id },
+      action: { label: 'Let it go', cardId: meta.id },
     })
   }, [frame, pendingAmountIds, ownMeta, justPlacedId, pendingPayment, confirmation])
 
@@ -269,13 +269,13 @@ export function FramePage() {
     } else if (paid) {
       setConfirmation({
         primary: `Your card is with ${creatorFirst}.`,
-        secondary: `Your ${formatAmount(amountCents)} went with it. A receipt is on its way.`,
+        secondary: `${formatAmount(amountCents)} went with it.`,
       })
     } else {
       setConfirmation({
         primary: `The ${formatAmount(amountCents)} is still waiting.`,
-        secondary: `Your card is saved; complete the amount when you're ready.`,
-        action: { label: 'Complete it', cardId },
+        secondary: `Your card is saved. You can let the amount go with it when ready.`,
+        action: { label: 'Let it go', cardId },
       })
     }
   }
@@ -313,7 +313,7 @@ export function FramePage() {
     } catch {
       setConfirmation({
         primary: `The ${formatAmount(meta.amountCents)} didn't go with your card yet.`,
-        action: { label: 'Complete it', cardId },
+        action: { label: 'Let it go', cardId },
       })
     }
   }
@@ -587,13 +587,13 @@ export function FramePage() {
               }}
             >
               <div className="mb-5 flex items-start justify-between gap-4">
-                <p className="font-display text-xl text-[#211c16]/90">Let the amount go with it</p>
+                <p className="font-display text-xl text-[#211c16]/90">Send your card to {frame.creator.name}</p>
                 <button
                   type="button"
                   onClick={dismissPayment}
-                  className="shrink-0 rounded-[6px] border border-[#211c16]/25 px-3 py-1.5 text-sm text-[#211c16]/72 transition-colors hover:border-[#211c16]/50 hover:text-[#211c16]"
+                  className="shrink-0 rounded-[6px] border border-[#211c16]/15 px-3 py-1.5 text-xs text-[#211c16]/52 transition-colors hover:border-[#211c16]/32 hover:text-[#211c16]/72"
                 >
-                  Later
+                  Leave waiting
                 </button>
               </div>
               <PaymentStep
