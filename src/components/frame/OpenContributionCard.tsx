@@ -159,7 +159,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
   const [custom, setCustom] = useState('')
   const [justCard, setJustCard] = useState(false)
   const [isPrivate, setIsPrivate] = useState(false)
-  const [amountOpen, setAmountOpen] = useState(false)
+  const [amountOpen, setAmountOpen] = useState(true)
 
   const amountSelected = !justCard && !!amountCents && amountCents >= 100
   const hasDisplayName = name.trim().length > 0
@@ -171,7 +171,7 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
   const needsCardContentChoice = hasStartedCard && hasEmail && !hasCompletionChoice
   const selectedAmountText = amountSelected && amountCents ? `${formatAmount(amountCents)} will go with it.` : null
   const helperText = !hasStartedCard
-    ? 'Add your name, a few words, and a photo or payment to send your card.'
+    ? 'Add your name, a few words, and a photo or amount to send your card.'
     : !hasEmail
       ? 'Add your email to place the card.'
       : null
@@ -299,76 +299,78 @@ export function OpenContributionCard({ busy, error, onPlace }: Props) {
         </label>
       </div>
 
-      <label className={`mb-3.5 block pb-1 ${RULED}`} data-composer-section>
-        <span className="sr-only">Your card</span>
-        <textarea
-          maxLength={NOTE_LIMIT}
-          rows={2}
-          aria-label="Your card"
-          placeholder="What stayed with you?"
-          value={note}
-          onFocus={scrollFocusedFieldIntoView}
-          onBlur={clearFallbackKeyboardSpace}
-          onChange={(e) => setNote(e.target.value.slice(0, NOTE_LIMIT))}
-          className="w-full resize-none bg-transparent px-0 py-0 font-display text-[15px] leading-6 text-[#211c16]/82 placeholder:text-[#6b5f4d]/82 focus:outline-none"
-        />
-        {note.length >= 120 && (
-          <span className="mt-1 block text-right text-[10px] text-[#211c16]/62">
-            {note.length}/{NOTE_LIMIT}
-          </span>
-        )}
-      </label>
-
-      <div className="mb-4 flex items-center justify-between gap-3" data-composer-section>
-        {imageUrl ? (
-          <div className="group relative inline-flex h-9 items-center gap-2 rounded-full border border-[#211c16]/10 bg-[#fff8e8]/36 py-1 pl-1 pr-3 text-[12px] text-[#211c16]/66">
-            <span className="h-7 w-7 overflow-hidden rounded-full bg-[#fbf5e8] p-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.18)]">
-              <img
-                src={imageUrl}
-                alt=""
-                className="h-full w-full rounded-full object-cover opacity-90 saturate-[0.55] contrast-[0.9] sepia-[0.12]"
-              />
+      <div className="mb-4 border-b border-[#211c16]/14 pb-3 transition-colors focus-within:border-[#211c16]/32" data-composer-section>
+        <label className="block">
+          <span className="sr-only">Your card</span>
+          <textarea
+            maxLength={NOTE_LIMIT}
+            rows={2}
+            aria-label="Your card"
+            placeholder="What stayed with you?"
+            value={note}
+            onFocus={scrollFocusedFieldIntoView}
+            onBlur={clearFallbackKeyboardSpace}
+            onChange={(e) => setNote(e.target.value.slice(0, NOTE_LIMIT))}
+            className="w-full resize-none bg-transparent px-0 py-0 font-display text-[15px] leading-6 text-[#211c16]/82 placeholder:text-[#6b5f4d]/82 focus:outline-none"
+          />
+          {note.length >= 120 && (
+            <span className="mt-1 block text-right text-[10px] text-[#211c16]/62">
+              {note.length}/{NOTE_LIMIT}
             </span>
-            photo
-            <button
-              type="button"
-              aria-label="Remove photo"
+          )}
+        </label>
+
+        <div className="mt-2 flex items-center justify-between gap-3">
+          {imageUrl ? (
+            <div className="group relative inline-flex h-9 items-center gap-2 rounded-full border border-[#211c16]/10 bg-[#fff8e8]/36 py-1 pl-1 pr-3 text-[12px] text-[#211c16]/66">
+              <span className="h-7 w-7 overflow-hidden rounded-full bg-[#fbf5e8] p-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.18)]">
+                <img
+                  src={imageUrl}
+                  alt=""
+                  className="h-full w-full rounded-full object-cover opacity-90 saturate-[0.55] contrast-[0.9] sepia-[0.12]"
+                />
+              </span>
+              photo
+              <button
+                type="button"
+                aria-label="Remove photo"
+                onPointerDown={blurActiveTextField}
+                onClick={() => {
+                  setImageUrl(null)
+                  setImageFile(null)
+                }}
+                className="ml-0.5 text-[12px] leading-none text-[#211c16]/42 transition-colors hover:text-[#211c16]/76"
+              >
+                ×
+              </button>
+            </div>
+          ) : (
+            <label
+              className="group inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded-full border border-[#211c16]/10 bg-[#211c16]/[0.035] px-3 py-1.5 text-[12px] text-[#211c16]/54 transition-colors hover:bg-[#211c16]/[0.065] hover:text-[#211c16]/76"
               onPointerDown={blurActiveTextField}
-              onClick={() => {
-                setImageUrl(null)
-                setImageFile(null)
-              }}
-              className="ml-0.5 text-[12px] leading-none text-[#211c16]/42 transition-colors hover:text-[#211c16]/76"
             >
-              ×
-            </button>
-          </div>
-        ) : (
-          <label
-            className="group inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded-full border border-[#211c16]/10 bg-[#211c16]/[0.035] px-3 py-1.5 text-[12px] text-[#211c16]/54 transition-colors hover:bg-[#211c16]/[0.065] hover:text-[#211c16]/76"
-            onPointerDown={blurActiveTextField}
-          >
-            <span className="text-[14px] leading-none">+</span>
-            photo
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) {
-                  if (imageUrl?.startsWith('blob:')) URL.revokeObjectURL(imageUrl)
-                  setImageFile(f)
-                  setImageUrl(URL.createObjectURL(f))
-                }
-              }}
-            />
-          </label>
-        )}
-        <p className="text-[10px] leading-snug text-[#211c16]/42">optional memory</p>
+              <span className="text-[14px] leading-none">+</span>
+              photo
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) {
+                    if (imageUrl?.startsWith('blob:')) URL.revokeObjectURL(imageUrl)
+                    setImageFile(f)
+                    setImageUrl(URL.createObjectURL(f))
+                  }
+                }}
+              />
+            </label>
+          )}
+          <p className="text-[10px] leading-snug text-[#211c16]/42">optional memory</p>
+        </div>
       </div>
 
-      <div className="border-y border-[#211c16]/10 py-3" data-composer-section>
+      <div className="border-b border-[#211c16]/10 pb-3" data-composer-section>
         <div className="mb-2">
           <span className="text-[10px] uppercase tracking-[0.12em] text-[#211c16]/42">Inside the card</span>
         </div>
