@@ -40,35 +40,50 @@ function SignIn() {
   }
 
   return (
-    <div className="max-w-sm space-y-5">
+    <div className="grid max-w-4xl gap-8 md:grid-cols-[1fr_22rem] md:items-start">
       <header>
-        <h1 className="font-display text-4xl">For the moment the work moves someone.</h1>
+        <p className="text-[11px] uppercase tracking-[0.22em] text-parchment/55">Create a Living Frame</p>
+        <h1 className="mt-3 font-display text-5xl leading-[0.98]">Start with one work.</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          Sign in to create a frame and gather cards beneath your work.
+          Upload an image, add title and context, then get a link and QR where cards gather beneath it.
         </p>
+        <div className="mt-6 grid gap-3 text-sm text-parchment/68">
+          <p className="rounded-[7px] border border-line bg-surface/55 px-4 py-3">
+            Amounts are demo-only until you connect payouts.
+          </p>
+          <p className="rounded-[7px] border border-line bg-surface/55 px-4 py-3">
+            Photos can be hidden, and amounts are private publicly.
+          </p>
+          <p className="rounded-[7px] border border-line bg-surface/55 px-4 py-3">
+            You see the giver names and emails attached to their cards.
+          </p>
+        </div>
       </header>
-      <input
-        type="email"
-        placeholder="Your email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className="w-full rounded-[7px] border border-line bg-surface px-4 py-3 placeholder:text-muted/60"
-      />
-      <input
-        placeholder="Your name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="w-full rounded-[7px] border border-line bg-surface px-4 py-3 placeholder:text-muted/60"
-      />
-      {error && <p className="text-sm text-red-300/90">{error}</p>}
-      <button
-        type="button"
-        disabled={busy || !email.includes('@') || !name.trim()}
-        onClick={submit}
-        className="w-full rounded-[7px] border border-line bg-surface py-3 font-display disabled:opacity-40"
-      >
-        {busy ? 'Sending...' : 'Send sign-in link'}
-      </button>
+      <div className="space-y-5 rounded-[8px] border border-line bg-surface p-5 shadow-[0_18px_60px_-42px_rgba(0,0,0,0.9)]">
+        <p className="font-display text-2xl">Create your first frame</p>
+        <input
+          type="email"
+          placeholder="Your email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full rounded-[7px] border border-line bg-ink px-4 py-3 placeholder:text-muted/60"
+        />
+        <input
+          placeholder="Your name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="w-full rounded-[7px] border border-line bg-ink px-4 py-3 placeholder:text-muted/60"
+        />
+        {error && <p className="text-sm text-red-300/90">{error}</p>}
+        <button
+          type="button"
+          disabled={busy || !email.includes('@') || !name.trim()}
+          onClick={submit}
+          className="w-full rounded-[7px] border border-parchment/24 bg-ink py-3 font-display text-parchment disabled:opacity-40"
+        >
+          {busy ? 'Sending...' : 'Send sign-in link'}
+        </button>
+      </div>
     </div>
   )
 }
@@ -109,7 +124,7 @@ function Onboarding() {
         <div className="m-5 rounded-[7px] border border-brass/30 bg-brass/10 p-4">
           <p className="font-display text-lg text-parchment">Pilot amount mode</p>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            Amounts can be felt in the product now. Live payouts can be connected after creator feedback.
+            Visitors can choose amounts in the experience, but no live money moves until payouts are connected.
           </p>
         </div>
       ) : status?.onboarded ? (
@@ -121,7 +136,7 @@ function Onboarding() {
       ) : (
         <div className="space-y-4 p-5">
           <p className="text-muted text-sm leading-relaxed">
-            Connect payouts when you are ready to move live amounts. Cards stay attached to your work either way.
+            Connect payouts when you are ready for live amounts. Until then, amount moments remain clearly pilot-mode.
           </p>
           <button
             type="button"

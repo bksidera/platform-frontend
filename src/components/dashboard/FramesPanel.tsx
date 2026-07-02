@@ -266,9 +266,9 @@ export function FramesPanel() {
       <div className="flex items-start justify-between gap-5 border-b border-line pb-5">
         <div>
           <p className="text-xs uppercase tracking-[0.16em] text-muted">Share center</p>
-          <h2 className="mt-1 font-display text-3xl">Living Frames ready to send</h2>
+          <h2 className="mt-1 font-display text-3xl">Make a frame, then share it.</h2>
           <p className="mt-1 max-w-md text-sm leading-relaxed text-muted">
-            Create the work object, copy the link, pull the QR, and review the cards gathering at its edge.
+            One image becomes a public link and QR. Cards gather beneath the work, with any amount kept inside the card.
           </p>
         </div>
         {!creating && (
@@ -285,9 +285,9 @@ export function FramesPanel() {
       {creating && (
         <div className="rounded-[8px] border border-line bg-surface p-5 shadow-[0_18px_60px_-42px_rgba(0,0,0,0.9)]">
           <div className="mb-5">
-            <p className="font-display text-xl">Prepare a frame</p>
+            <p className="font-display text-xl">Prepare the work</p>
             <p className="mt-1 text-sm leading-relaxed text-muted">
-              Choose the image first. The public link will keep the work dominant and hold one waiting card below it.
+              Choose one image, add a title and context, then create the link where cards gather.
             </p>
           </div>
           <div className="grid gap-5 md:grid-cols-[12rem_1fr]">
@@ -297,7 +297,7 @@ export function FramesPanel() {
                   <img src={previewUrl} alt="" className="h-full w-full object-cover" />
                 ) : (
                   <div className="flex h-full items-center justify-center px-5 text-center text-sm text-muted">
-                    Select the creator image
+                    Upload the image
                   </div>
                 )}
               </div>
@@ -331,6 +331,20 @@ export function FramesPanel() {
                   className="w-full rounded-[7px] border border-line bg-ink px-4 py-3 placeholder:text-muted/60"
                 />
               </label>
+              <div className="grid gap-2 pt-1 text-xs leading-relaxed text-muted sm:grid-cols-2">
+                <p className="rounded-[6px] border border-line bg-ink/35 px-3 py-2">
+                  You will get a share link and QR after creation.
+                </p>
+                <p className="rounded-[6px] border border-line bg-ink/35 px-3 py-2">
+                  Cards include names, emails, words, photos, and optional amounts.
+                </p>
+                <p className="rounded-[6px] border border-line bg-ink/35 px-3 py-2">
+                  Photos can be hidden from the public frame.
+                </p>
+                <p className="rounded-[6px] border border-line bg-ink/35 px-3 py-2">
+                  Amounts are private publicly; pilot amounts are not live money.
+                </p>
+              </div>
             </div>
           </div>
           {error && <p className="text-sm text-red-300/90">{error}</p>}
@@ -360,12 +374,19 @@ export function FramesPanel() {
       {isLoading && <p className="rounded-[8px] border border-line bg-surface p-5 text-sm text-muted">Loading frames...</p>}
 
       {!isLoading && (frames ?? []).length === 0 && !creating && (
-        <div className="grid gap-5 rounded-[8px] border border-dashed border-line bg-surface/60 p-6 md:grid-cols-[1fr_14rem] md:items-center">
+        <div className="grid gap-6 rounded-[8px] border border-dashed border-line bg-surface/60 p-6 md:grid-cols-[1fr_14rem] md:items-center">
           <div>
-            <p className="font-display text-2xl">Create the first shareable frame.</p>
+            <p className="font-display text-3xl leading-tight">Create your first shareable frame.</p>
             <p className="mt-2 text-sm leading-relaxed text-muted">
-              Start with one strong image and a little context. You will get a public link and QR for the place where cards gather.
+              Start with one strong image and a little context. The frame gives you a public link, a QR,
+              and one waiting card beneath the work.
             </p>
+            <div className="mt-4 grid gap-2 text-xs leading-relaxed text-parchment/64 sm:grid-cols-2">
+              <p className="rounded-[6px] border border-line bg-ink/30 px-3 py-2">1. Upload one image.</p>
+              <p className="rounded-[6px] border border-line bg-ink/30 px-3 py-2">2. Add title and context.</p>
+              <p className="rounded-[6px] border border-line bg-ink/30 px-3 py-2">3. Copy the link or download QR.</p>
+              <p className="rounded-[6px] border border-line bg-ink/30 px-3 py-2">4. Review cards as they arrive.</p>
+            </div>
           </div>
           <div className="rounded-[8px] border border-line bg-ink/70 p-3">
             <div className="aspect-[4/5] rounded-[6px] border border-line bg-surface/45" />

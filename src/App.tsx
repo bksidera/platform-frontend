@@ -4,13 +4,14 @@ import { ArchivePage } from './pages/ArchivePage'
 import { FramePage } from './pages/FramePage'
 import { AuthVerifyPage } from './pages/AuthVerifyPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { HomePage } from './pages/HomePage'
 import { FramePrototypePage } from './prototype/frame/FramePrototypePage'
 
 export function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<AboutPage />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/prototype/frame" element={<FramePrototypePage />} />
         <Route path="/auth/verify" element={<AuthVerifyPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
