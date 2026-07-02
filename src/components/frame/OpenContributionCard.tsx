@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FocusEvent } from 'react'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 
 /**
  * The card being written. The waiting card expands into this paper object.
@@ -158,23 +158,27 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
   const [custom, setCustom] = useState('')
   const [justCard, setJustCard] = useState(false)
   const [isPrivate, setIsPrivate] = useState(false)
+  const [isFinishing, setIsFinishing] = useState(false)
 
   const amountSelected = !justCard && !!amountCents && amountCents >= 100
   const hasDisplayName = name.trim().length > 0
   const hasEmail = email.trim().includes('@')
   const hasNote = note.trim().length > 0
-  const hasStartedCard = hasNote || hasDisplayName || !!imageUrl
+  const hasStartedCard = hasNote || hasDisplayName
   const hasCompletionChoice = amountSelected || justCard
-  const canPlace = hasStartedCard && hasEmail && hasCompletionChoice
+  const canContinue = hasStartedCard && !busy
+  const canPlace = isFinishing && hasStartedCard && hasEmail && hasCompletionChoice
   const selectedAmountText = amountSelected && amountCents ? `${formatAmount(amountCents)} will go with it.` : null
-  const helperText = !hasStartedCard
-    ? 'Add your name or note to begin.'
+  const helperText = !isFinishing
+    ? hasStartedCard
+      ? null
+      : 'Start with a name or a few words.'
     : !hasCompletionChoice
       ? 'Choose an amount, or choose card without amount.'
       : !hasEmail
         ? 'Add your email to place the card.'
         : null
-  const placeButtonActive = canPlace && !busy
+  const primaryButtonActive = isFinishing ? canPlace && !busy : canContinue
   const placeLabel = busy ? 'Placing card...' : 'Place card'
   const {
     keyboardBottomSpace,
@@ -208,6 +212,12 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
       amountCents: justCard ? null : amountCents,
       visibility: isPrivate ? 'private' : 'public',
     })
+  }
+
+  const continueCard = () => {
+    blurActiveTextField()
+    if (!canContinue) return
+    setIsFinishing(true)
   }
 
   const selectAmount = (cents: number) => {
@@ -281,167 +291,182 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
         )}
       </label>
 
-      <div className="mb-4 space-y-2 border-b border-[#211c16]/10 pb-3.5" data-composer-section>
-        <div className="flex items-baseline justify-between gap-3">
-          <span className="text-[12px] leading-tight text-[#211c16]/68">Amount inside the card</span>
-          <span className="shrink-0 text-[10px] leading-tight text-[#211c16]/46">optional</span>
-        </div>
-        <div className="space-y-2">
-          <div className="grid grid-cols-4 gap-1.5">
-            {PRESETS.map((cents) => (
-              <button
-                key={cents}
-                type="button"
-                onPointerDown={blurActiveTextField}
-                onClick={() => selectAmount(cents)}
-                aria-pressed={amountCents === cents && !customOpen && !justCard}
-                className={`min-h-8 rounded-[5px] border border-transparent px-2 py-1 text-[13px] transition-colors ${
-                  amountCents === cents && !customOpen && !justCard ? CHIP_SELECTED : CHIP_IDLE
-                }`}
-              >
-                {cents === 1000 ? (
-                  <span className="inline-flex items-baseline justify-center gap-1">
-                    <span>$10</span>
-                    <span
-                      className={
-                        amountCents === cents && !customOpen && !justCard
-                          ? 'text-[9px] text-[#f3ecde]/62'
-                          : 'text-[9px] text-[#211c16]/42'
-                      }
+      <AnimatePresence initial={false}>
+        {isFinishing && (
+          <motion.div
+            key="finish-card"
+            layout
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="mb-4 space-y-2 border-b border-[#211c16]/10 pb-3.5" data-composer-section>
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-[12px] leading-tight text-[#211c16]/68">Amount inside the card</span>
+                <span className="shrink-0 text-[10px] leading-tight text-[#211c16]/46">optional</span>
+              </div>
+              <div className="space-y-2">
+                <div className="grid grid-cols-4 gap-1.5">
+                  {PRESETS.map((cents) => (
+                    <button
+                      key={cents}
+                      type="button"
+                      onPointerDown={blurActiveTextField}
+                      onClick={() => selectAmount(cents)}
+                      aria-pressed={amountCents === cents && !customOpen && !justCard}
+                      className={`min-h-8 rounded-[5px] border border-transparent px-2 py-1 text-[13px] transition-colors ${
+                        amountCents === cents && !customOpen && !justCard ? CHIP_SELECTED : CHIP_IDLE
+                      }`}
                     >
-                      usual
-                    </span>
+                      {cents === 1000 ? (
+                        <span className="inline-flex items-baseline justify-center gap-1">
+                          <span>$10</span>
+                          <span
+                            className={
+                              amountCents === cents && !customOpen && !justCard
+                                ? 'text-[9px] text-[#f3ecde]/62'
+                                : 'text-[9px] text-[#211c16]/42'
+                            }
+                          >
+                            usual
+                          </span>
+                        </span>
+                      ) : (
+                        `$${cents / 100}`
+                      )}
+                    </button>
+                  ))}
+                  {customOpen && !justCard ? (
+                    <label className={`flex min-h-8 items-center justify-center gap-1 rounded-[5px] px-2 py-1 text-[13px] ${CHIP_SELECTED}`}>
+                      <span className="text-[#f3ecde]/62">$</span>
+                      <input
+                        ref={customInputRef}
+                        inputMode="decimal"
+                        aria-label="Custom amount"
+                        placeholder="Other"
+                        value={custom}
+                        onFocus={scrollFocusedFieldIntoView}
+                        onBlur={clearFallbackKeyboardSpace}
+                        onChange={(e) => {
+                          setCustom(e.target.value)
+                          const d = parseFloat(e.target.value)
+                          setAmountCents(d >= 1 ? Math.round(d * 100) : null)
+                        }}
+                        className="min-w-0 flex-1 bg-transparent text-center text-inherit placeholder:text-[#f3ecde]/55 focus:outline-none"
+                      />
+                    </label>
+                  ) : (
+                    <button
+                      type="button"
+                      onPointerDown={blurActiveTextField}
+                      onClick={openCustom}
+                      aria-pressed={false}
+                      className={`min-h-8 rounded-[5px] border border-transparent px-2 py-1 text-[13px] transition-colors ${CHIP_IDLE}`}
+                    >
+                      Other
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onPointerDown={blurActiveTextField}
+                  onClick={selectJustCard}
+                  aria-pressed={justCard}
+                  className={`block text-[11px] transition-colors ${
+                    justCard
+                      ? 'text-[#211c16] underline underline-offset-4'
+                      : 'text-[#211c16]/56 hover:text-[#211c16]/82'
+                  }`}
+                >
+                  Card without amount
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-4" data-composer-section>
+              {imageUrl ? (
+                <div className="relative h-11 w-11 rotate-[-1.5deg] rounded-[4px] bg-[#fbf5e8] p-1 shadow-[0_1px_2px_rgba(0,0,0,0.22)]">
+                  <img
+                    src={imageUrl}
+                    alt=""
+                    className="h-full w-full rounded-[2px] object-cover opacity-90 saturate-[0.55] contrast-[0.9] sepia-[0.12]"
+                  />
+                  <button
+                    type="button"
+                    aria-label="Remove photo"
+                    onPointerDown={blurActiveTextField}
+                    onClick={() => {
+                      setImageUrl(null)
+                      setImageFile(null)
+                    }}
+                    className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-[#211c16] border border-[#f2ebdd]/70 text-[#f2ebdd] text-[10px] leading-none"
+                  >
+                    ×
+                  </button>
+                </div>
+              ) : (
+                <label
+                  className="group inline-flex cursor-pointer items-center gap-2.5 text-left"
+                  onPointerDown={blurActiveTextField}
+                >
+                  <span className="flex h-11 w-11 -rotate-[1.5deg] items-center justify-center rounded-[4px] border border-[#211c16]/12 bg-[#fbf5e8]/35 text-[17px] font-light leading-none text-[#211c16]/36 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-colors group-hover:border-[#211c16]/24 group-hover:text-[#211c16]/55">
+                    +
                   </span>
-                ) : (
-                  `$${cents / 100}`
-                )}
-              </button>
-            ))}
-            {customOpen && !justCard ? (
-              <label className={`flex min-h-8 items-center justify-center gap-1 rounded-[5px] px-2 py-1 text-[13px] ${CHIP_SELECTED}`}>
-                <span className="text-[#f3ecde]/62">$</span>
-                <input
-                  ref={customInputRef}
-                  inputMode="decimal"
-                  aria-label="Custom amount"
-                  placeholder="Other"
-                  value={custom}
-                  onFocus={scrollFocusedFieldIntoView}
-                  onBlur={clearFallbackKeyboardSpace}
-                  onChange={(e) => {
-                    setCustom(e.target.value)
-                    const d = parseFloat(e.target.value)
-                    setAmountCents(d >= 1 ? Math.round(d * 100) : null)
-                  }}
-                  className="min-w-0 flex-1 bg-transparent text-center text-inherit placeholder:text-[#f3ecde]/55 focus:outline-none"
-                />
-              </label>
-            ) : (
-              <button
-                type="button"
-                onPointerDown={blurActiveTextField}
-                onClick={openCustom}
-                aria-pressed={false}
-                className={`min-h-8 rounded-[5px] border border-transparent px-2 py-1 text-[13px] transition-colors ${CHIP_IDLE}`}
-              >
-                Other
-              </button>
-            )}
-          </div>
-          <button
-            type="button"
-            onPointerDown={blurActiveTextField}
-            onClick={selectJustCard}
-            aria-pressed={justCard}
-            className={`block text-[11px] transition-colors ${
-              justCard ? 'text-[#211c16] underline underline-offset-4' : 'text-[#211c16]/56 hover:text-[#211c16]/82'
-            }`}
-          >
-            Card without amount
-          </button>
-        </div>
-      </div>
+                  <span className="text-[13px] text-[#211c16]/68 transition-colors group-hover:text-[#211c16]/85">
+                    Add a photo
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0]
+                      if (f) {
+                        if (imageUrl?.startsWith('blob:')) URL.revokeObjectURL(imageUrl)
+                        setImageFile(f)
+                        setImageUrl(URL.createObjectURL(f))
+                      }
+                    }}
+                  />
+                </label>
+              )}
+              {imageUrl && (
+                <p className="mt-2 text-[10px] leading-snug text-[#211c16]/68">
+                  Photos appear with the card. The creator can hold them back.
+                </p>
+              )}
+            </div>
 
-      <div className="mb-4" data-composer-section>
-        {imageUrl ? (
-          <div className="relative h-11 w-11 rotate-[-1.5deg] rounded-[4px] bg-[#fbf5e8] p-1 shadow-[0_1px_2px_rgba(0,0,0,0.22)]">
-            <img
-              src={imageUrl}
-              alt=""
-              className="h-full w-full rounded-[2px] object-cover opacity-90 saturate-[0.55] contrast-[0.9] sepia-[0.12]"
-            />
-            <button
-              type="button"
-              aria-label="Remove photo"
-              onPointerDown={blurActiveTextField}
-              onClick={() => {
-                setImageUrl(null)
-                setImageFile(null)
-              }}
-              className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-[#211c16] border border-[#f2ebdd]/70 text-[#f2ebdd] text-[10px] leading-none"
-            >
-              ×
-            </button>
-          </div>
-        ) : (
-          <label
-            className="group inline-flex cursor-pointer items-center gap-2.5 text-left"
-            onPointerDown={blurActiveTextField}
-          >
-            <span className="flex h-11 w-11 -rotate-[1.5deg] items-center justify-center rounded-[4px] border border-[#211c16]/12 bg-[#fbf5e8]/35 text-[17px] font-light leading-none text-[#211c16]/36 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-colors group-hover:border-[#211c16]/24 group-hover:text-[#211c16]/55">
-              +
-            </span>
-            <span className="text-[13px] text-[#211c16]/68 transition-colors group-hover:text-[#211c16]/85">
-              Add a photo
-            </span>
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) {
-                  if (imageUrl?.startsWith('blob:')) URL.revokeObjectURL(imageUrl)
-                  setImageFile(f)
-                  setImageUrl(URL.createObjectURL(f))
-                }
-              }}
-            />
-          </label>
+            <label className={`mt-4 block pb-1 ${RULED}`} data-composer-section>
+              <span className="sr-only">Your email</span>
+              <input
+                type="email"
+                aria-label="Your email"
+                placeholder="Email"
+                value={email}
+                onFocus={scrollFocusedFieldIntoView}
+                onBlur={clearFallbackKeyboardSpace}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-none border-0 bg-transparent px-0 py-0 font-display text-[15px] leading-6 text-[#211c16]/82 placeholder:text-[#6b5f4d]/82 focus:outline-none"
+              />
+            </label>
+            <p className="mt-1.5 text-[10px] leading-snug text-[#211c16]/58">
+              {creatorFirst} sees your name and note. Your email stays private.
+            </p>
+
+            <label className="mt-3.5 flex cursor-pointer items-start gap-2 text-[10px] leading-snug text-[#211c16]/58">
+              <input
+                type="checkbox"
+                checked={isPrivate}
+                onChange={(e) => setIsPrivate(e.target.checked)}
+                className="mt-0.5 h-3 w-3 accent-[#211c16]"
+              />
+              <span>Keep this card between you and the creator.</span>
+            </label>
+          </motion.div>
         )}
-        {imageUrl && (
-          <p className="mt-2 text-[10px] leading-snug text-[#211c16]/68">
-            Photos appear with the card. The creator can hold them back.
-          </p>
-        )}
-      </div>
-
-      <label className={`mt-4 block pb-1 ${RULED}`} data-composer-section>
-        <span className="sr-only">Your email</span>
-        <input
-          type="email"
-          aria-label="Your email"
-          placeholder="Email"
-          value={email}
-          onFocus={scrollFocusedFieldIntoView}
-          onBlur={clearFallbackKeyboardSpace}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-none border-0 bg-transparent px-0 py-0 font-display text-[15px] leading-6 text-[#211c16]/82 placeholder:text-[#6b5f4d]/82 focus:outline-none"
-        />
-      </label>
-      <p className="mt-1.5 text-[10px] leading-snug text-[#211c16]/58">
-        {creatorFirst} sees your name and note. Your email stays private.
-      </p>
-
-      <label className="mt-3.5 flex cursor-pointer items-start gap-2 text-[10px] leading-snug text-[#211c16]/58">
-        <input
-          type="checkbox"
-          checked={isPrivate}
-          onChange={(e) => setIsPrivate(e.target.checked)}
-          className="mt-0.5 h-3 w-3 accent-[#211c16]"
-        />
-        <span>Keep this card between you and the creator.</span>
-      </label>
+      </AnimatePresence>
 
       {error && <p className="mt-3 text-xs text-[#7a2e22]">{error}</p>}
 
@@ -459,16 +484,16 @@ export function OpenContributionCard({ busy, error, creatorFirst = 'the creator'
 
       <button
         type="button"
-        disabled={busy || !canPlace}
+        disabled={busy || !primaryButtonActive}
         onPointerDown={blurActiveTextField}
-        onClick={place}
+        onClick={isFinishing ? place : continueCard}
         className={`mt-4 w-full rounded-[7px] border py-2.5 font-display text-[15px] transition-colors ${
-          placeButtonActive
+          primaryButtonActive
             ? 'border-[#211c16] bg-[#211c16] text-[#f2ebdd] shadow-[0_8px_18px_rgba(0,0,0,0.18)]'
             : 'border-[#211c16]/10 bg-[#211c16]/5 text-[#211c16]/45 shadow-none'
         }`}
       >
-        {placeLabel}
+        {isFinishing ? placeLabel : 'Continue'}
       </button>
     </motion.div>
   )
